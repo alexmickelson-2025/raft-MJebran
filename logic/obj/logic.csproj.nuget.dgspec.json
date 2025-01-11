@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ahmad.jebran\\Desktop\\Distributed\\raft-MJebran\\logic\\logic.csproj": {}
+    "C:\\Users\\ahmad.jebran\\Desktop\\2024-2025\\Distributed\\raft-MJebran\\logic\\logic.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ahmad.jebran\\Desktop\\Distributed\\raft-MJebran\\logic\\logic.csproj": {
+    "C:\\Users\\ahmad.jebran\\Desktop\\2024-2025\\Distributed\\raft-MJebran\\logic\\logic.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ahmad.jebran\\Desktop\\Distributed\\raft-MJebran\\logic\\logic.csproj",
+        "projectUniqueName": "C:\\Users\\ahmad.jebran\\Desktop\\2024-2025\\Distributed\\raft-MJebran\\logic\\logic.csproj",
         "projectName": "logic",
-        "projectPath": "C:\\Users\\ahmad.jebran\\Desktop\\Distributed\\raft-MJebran\\logic\\logic.csproj",
+        "projectPath": "C:\\Users\\ahmad.jebran\\Desktop\\2024-2025\\Distributed\\raft-MJebran\\logic\\logic.csproj",
         "packagesPath": "C:\\Users\\ahmad.jebran\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ahmad.jebran\\Desktop\\Distributed\\raft-MJebran\\logic\\obj\\",
+        "outputPath": "C:\\Users\\ahmad.jebran\\Desktop\\2024-2025\\Distributed\\raft-MJebran\\logic\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

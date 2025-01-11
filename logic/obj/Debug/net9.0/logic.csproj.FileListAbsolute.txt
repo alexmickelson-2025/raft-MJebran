@@ -1,0 +1,11 @@
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\bin\Debug\net9.0\logic.deps.json
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\bin\Debug\net9.0\logic.dll
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\bin\Debug\net9.0\logic.pdb
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.AssemblyInfoInputs.cache
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.AssemblyInfo.cs
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.csproj.CoreCompileInputs.cache
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.dll
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\refint\logic.dll
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\logic.pdb
+C:\Users\ahmad.jebran\Desktop\Distributed\raft-MJebran\logic\obj\Debug\net9.0\ref\logic.dll

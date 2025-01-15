@@ -95,6 +95,26 @@ public class LeaderElectionTests
         Assert.Equal(2, node.CurrentTerm); 
     }
 
+       // Testing # 6 Randomized Election Timeout
+    [Fact]
+    public void TestRandomizedElectionTimeout_IsWithinRange()
+    {
+        // Arrange
+        var node = new RaftNode();
+        var timeouts = new List<int>();
+
+        // Act
+        for (int i = 0; i < 100; i++) 
+        {
+            node.ResetElectionTimer();
+            timeouts.Add(node.ElectionTimeout);
+        }
+
+        // Assert
+        Assert.All(timeouts, timeout => Assert.InRange(timeout, 150, 300));
+        Assert.Contains(timeouts, t => t != timeouts.First()); 
+    }
+
 
 
 }

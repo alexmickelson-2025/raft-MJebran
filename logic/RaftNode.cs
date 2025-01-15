@@ -24,7 +24,7 @@ public class RaftNode
         CurrentTerm = 0;
         CurrentLeaderId = null;
         VotedFor = null;
-        // ResetElectionTimer();
+        ResetElectionTimer();
     }
 
     // Test #1: Node Initialization
@@ -83,6 +83,13 @@ public class RaftNode
         }
 
         return new RequestForVoteResponse { VoteGranted = false };
+    }
+
+    // Test #6: Randomized Election Timeout
+    public void ResetElectionTimer()
+    {
+        var random = new Random();
+        ElectionTimeout = random.Next(150, 301); 
     }
 
 

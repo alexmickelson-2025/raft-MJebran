@@ -109,17 +109,19 @@ public class RaftNode
         BecomeCandidate();
     }
 
-    // Test #8: Follower Receiving Later Term AppendEntries
-    public void ProcessAppendEntriesWithLaterTerm(AppendEntriesRPC rpc)
+    // Test #9: Election Timer Expiry
+    public void StartElectionTimer(int timeoutMs)
     {
-        if (rpc.Term > CurrentTerm)
-        {
-            CurrentTerm = rpc.Term;
-            State = NodeState.Follower;
-            CurrentLeaderId = rpc.LeaderId;
-        }
+        LastHeartbeat = DateTime.UtcNow.AddMilliseconds(-timeoutMs);
     }
 
+    public void CheckElectionTimeout()
+    {
+        if (State == NodeState.Follower && (DateTime.UtcNow - LastHeartbeat).TotalMilliseconds > ElectionTimeout)
+        {
+            StartElection();
+        }
+    }
 
 
 

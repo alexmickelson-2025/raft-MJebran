@@ -72,11 +72,11 @@ public class LeaderElectionTests
         var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), 1, new List<LogEntry>());
 
         // Act
-        var response = node.ProcessAppendEntries(appendEntries); 
+        var response = node.ProcessAppendEntries(appendEntries);
 
         // Assert
-        Assert.NotNull(response); 
-        Assert.True(response.Success); 
+        Assert.NotNull(response);
+        Assert.True(response.Success);
     }
 
     // Testing # 5 Voting for Previous Term
@@ -84,15 +84,15 @@ public class LeaderElectionTests
     public void TestVotingForPreviousTerm_VotesYes()
     {
         // Arrange
-        var node = new RaftNode { CurrentTerm = 1 }; 
+        var node = new RaftNode { CurrentTerm = 1 };
         var requestForVote = new RequestForVoteRPC(term: 2, candidateId: Guid.NewGuid());
 
         // Act
         var response = node.HandleRequestForVote(requestForVote);
 
         // Assert
-        Assert.True(response.VoteGranted); 
-        Assert.Equal(2, node.CurrentTerm); 
+        Assert.True(response.VoteGranted);
+        Assert.Equal(2, node.CurrentTerm);
     }
 
     // Testing # 6 Randomized Election Timeout
@@ -104,7 +104,7 @@ public class LeaderElectionTests
         var timeouts = new List<int>();
 
         // Act
-        for (int i = 0; i < 100; i++) 
+        for (int i = 0; i < 100; i++)
         {
             node.ResetElectionTimer();
             timeouts.Add(node.ElectionTimeout);
@@ -112,7 +112,7 @@ public class LeaderElectionTests
 
         // Assert
         Assert.All(timeouts, timeout => Assert.InRange(timeout, 150, 300));
-        Assert.Contains(timeouts, t => t != timeouts.First()); 
+        Assert.Contains(timeouts, t => t != timeouts.First());
     }
 
     // Testing # 7 Term Increment on Election Start
@@ -120,30 +120,49 @@ public class LeaderElectionTests
     public void TestTermIncrementOnElectionStart_IncreasesTerm()
     {
         // Arrange
-        var node = new RaftNode { CurrentTerm = 1 }; 
+        var node = new RaftNode { CurrentTerm = 1 };
 
         // Act
         node.StartElection();
 
         // Assert
-        Assert.Equal(2, node.CurrentTerm); 
+        Assert.Equal(2, node.CurrentTerm);
     }
 
     // Testing # 8 Follower Receiving Lower Term AppendEntries
     [Fact]
-public void TestFollowerReceivesLaterTermAppendEntries_BecomesFollower()
-{
-    // Arrange
-    var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 1 }; 
-    var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), term: 2, new List<LogEntry>());
+    public void TestFollowerReceivesLaterTermAppendEntries_BecomesFollower()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 1 };
+        var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), term: 2, new List<LogEntry>());
 
-    // Act
-    node.HandleAppendEntries(appendEntries);
+        // Act
+        node.HandleAppendEntries(appendEntries);
 
-    // Assert
-    Assert.Equal(NodeState.Follower, node.State); // Ensure state changes to Follower
-    Assert.Equal(2, node.CurrentTerm); // Ensure term is updated
-}
+        // Assert
+        Assert.Equal(NodeState.Follower, node.State); // Ensure state changes to Follower
+        Assert.Equal(2, node.CurrentTerm); // Ensure term is updated
+    }
+
+   
+
+    // Testing # 9 Election Timer Expiry
+    [Fact]
+    public async Task TestElectionTimerExpiry_StartsElection()
+    {
+        // Arrange
+        var node = new RaftNode();
+        node.StartElectionTimer(300); 
+        // Act
+        await Task.Delay(310);
+        node.CheckElectionTimeout(); 
+
+        // Assert
+        Assert.Equal(NodeState.Candidate, node.State); 
+    }
+
+
 
 
 

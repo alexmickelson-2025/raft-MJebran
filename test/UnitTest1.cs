@@ -95,7 +95,7 @@ public class LeaderElectionTests
         Assert.Equal(2, node.CurrentTerm); 
     }
 
-       // Testing # 6 Randomized Election Timeout
+    // Testing # 6 Randomized Election Timeout
     [Fact]
     public void TestRandomizedElectionTimeout_IsWithinRange()
     {
@@ -115,7 +115,7 @@ public class LeaderElectionTests
         Assert.Contains(timeouts, t => t != timeouts.First()); 
     }
 
-        // Testing # 7 Term Increment on Election Start
+    // Testing # 7 Term Increment on Election Start
     [Fact]
     public void TestTermIncrementOnElectionStart_IncreasesTerm()
     {
@@ -128,6 +128,23 @@ public class LeaderElectionTests
         // Assert
         Assert.Equal(2, node.CurrentTerm); 
     }
+
+    // Testing # 8 Follower Receiving Lower Term AppendEntries
+    [Fact]
+public void TestFollowerReceivesLaterTermAppendEntries_BecomesFollower()
+{
+    // Arrange
+    var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 1 }; 
+    var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), term: 2, new List<LogEntry>());
+
+    // Act
+    node.HandleAppendEntries(appendEntries);
+
+    // Assert
+    Assert.Equal(NodeState.Follower, node.State); // Ensure state changes to Follower
+    Assert.Equal(2, node.CurrentTerm); // Ensure term is updated
+}
+
 
 
 

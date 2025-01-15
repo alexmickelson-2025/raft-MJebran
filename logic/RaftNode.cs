@@ -45,14 +45,25 @@ public class RaftNode
     // Test #3: Leader Recognition
     public void HandleAppendEntries(AppendEntriesRPC appendEntries)
     {
-        if (appendEntries.Term >= CurrentTerm)
+        // If the incoming term is greater, update the term, state, and leader
+        if (appendEntries.Term > CurrentTerm)
         {
-            CurrentTerm = appendEntries.Term;
-            State = NodeState.Follower;
-            CurrentLeaderId = appendEntries.LeaderId;
+            CurrentTerm = appendEntries.Term; // Update term
+            State = NodeState.Follower; // Transition to Follower state
+            CurrentLeaderId = appendEntries.LeaderId; // Update the current leader
         }
-        LastHeartbeat = DateTime.UtcNow;
+        else if (appendEntries.Term == CurrentTerm)
+        {
+            // If the term is the same, remain a follower and update leader ID
+            State = NodeState.Follower; // Ensure the node stays a follower
+            CurrentLeaderId = appendEntries.LeaderId; // Update the current leader
+        }
+
+        // Reset the heartbeat timer
+        LastHeartbeat = DateTime.UtcNow; //Reset 
     }
+
+
 
     // Test #4: AppendEntries Response
     public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
@@ -89,13 +100,24 @@ public class RaftNode
     public void ResetElectionTimer()
     {
         var random = new Random();
-        ElectionTimeout = random.Next(150, 301); 
+        ElectionTimeout = random.Next(150, 301);
     }
 
     // Test #7: Term Increment on Election Start
     public void StartElection()
     {
         BecomeCandidate();
+    }
+
+    // Test #8: Follower Receiving Later Term AppendEntries
+    public void ProcessAppendEntriesWithLaterTerm(AppendEntriesRPC rpc)
+    {
+        if (rpc.Term > CurrentTerm)
+        {
+            CurrentTerm = rpc.Term;
+            State = NodeState.Follower;
+            CurrentLeaderId = rpc.LeaderId;
+        }
     }
 
 

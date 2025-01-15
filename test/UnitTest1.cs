@@ -115,6 +115,20 @@ public class LeaderElectionTests
         Assert.Contains(timeouts, t => t != timeouts.First()); 
     }
 
+        // Testing # 7 Term Increment on Election Start
+    [Fact]
+    public void TestTermIncrementOnElectionStart_IncreasesTerm()
+    {
+        // Arrange
+        var node = new RaftNode { CurrentTerm = 1 }; 
+
+        // Act
+        node.StartElection();
+
+        // Assert
+        Assert.Equal(2, node.CurrentTerm); 
+    }
+
 
 
 }

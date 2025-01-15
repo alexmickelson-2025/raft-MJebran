@@ -92,6 +92,12 @@ public class RaftNode
         ElectionTimeout = random.Next(150, 301); 
     }
 
+    // Test #7: Term Increment on Election Start
+    public void StartElection()
+    {
+        BecomeCandidate();
+    }
+
 
 
 

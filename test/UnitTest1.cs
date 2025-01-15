@@ -34,7 +34,22 @@ public class LeaderElectionTests
         Assert.Equal(NodeState.Follower, state);
     }
 
-   
+   // Testing #2 Candidate Self Voting
+    [Fact]
+    public void TestCandidateSelfVoting_VotesForItself()
+    {
+        // Arrange
+        var node = new RaftNode();
+        node.BecomeCandidate();
+
+        // Act
+        var voteCount = node.GetVoteCount();
+
+        // Assert
+        Assert.Equal(1, voteCount);
+        Assert.True(node.HasVotedFor(node.Id));
+    }
+
 
 
 }

@@ -79,7 +79,21 @@ public class LeaderElectionTests
         Assert.True(response.Success); 
     }
 
-    
+    // Testing # 5 Voting for Previous Term
+    [Fact]
+    public void TestVotingForPreviousTerm_VotesYes()
+    {
+        // Arrange
+        var node = new RaftNode { CurrentTerm = 1 }; 
+        var requestForVote = new RequestForVoteRPC(term: 2, candidateId: Guid.NewGuid());
+
+        // Act
+        var response = node.HandleRequestForVote(requestForVote);
+
+        // Assert
+        Assert.True(response.VoteGranted); 
+        Assert.Equal(2, node.CurrentTerm); 
+    }
 
 
 

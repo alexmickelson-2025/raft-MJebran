@@ -61,6 +61,30 @@ public class RaftNode
         return new AppendEntriesResponse { Success = true };
     }
 
+    // Test #5: Voting for Previous Term
+    public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPC rpc)
+    {
+        if (rpc.Term < CurrentTerm)
+        {
+            return new RequestForVoteResponse { VoteGranted = false };
+        }
+
+        if (rpc.Term > CurrentTerm)
+        {
+            CurrentTerm = rpc.Term;
+            VotedFor = rpc.CandidateId;
+            return new RequestForVoteResponse { VoteGranted = true };
+        }
+
+        if (VotedFor == null || VotedFor == rpc.CandidateId)
+        {
+            VotedFor = rpc.CandidateId;
+            return new RequestForVoteResponse { VoteGranted = true };
+        }
+
+        return new RequestForVoteResponse { VoteGranted = false };
+    }
+
 
 
 

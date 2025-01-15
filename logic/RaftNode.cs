@@ -6,13 +6,25 @@ public enum NodeState
     Candidate,
     Leader
 }
+
 public class RaftNode
 {
+    public Guid Id { get; private set; }
     public NodeState State { get; set; }
-    public void processHeartbeat()
+    public int ElectionTimeout { get; private set; }
+
+    public RaftNode()
     {
-        if (State == NodeState.Follower)
-        {
-        }
+        Id = Guid.NewGuid();
+        State = NodeState.Follower; 
+        ResetElectionTimer();
+    }
+
+    public NodeState GetState() => State;
+
+    public void ResetElectionTimer()
+    {
+        var random = new Random();
+        ElectionTimeout = random.Next(150, 301); 
     }
 }

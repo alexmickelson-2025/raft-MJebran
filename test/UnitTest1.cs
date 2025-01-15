@@ -63,6 +63,21 @@ public class LeaderElectionTests
         Assert.Equal(leaderId, node.CurrentLeaderId);
     }
 
+    // Testing # 4 AppendEntries Response
+    [Fact]
+    public void TestAppendEntriesResponse_SendsResponseOnRequest()
+    {
+        // Arrange
+        var node = new RaftNode();
+        var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), 1, new List<LogEntry>());
+
+        // Act
+        var response = node.ProcessAppendEntries(appendEntries); 
+
+        // Assert
+        Assert.NotNull(response); 
+        Assert.True(response.Success); 
+    }
 
     
 

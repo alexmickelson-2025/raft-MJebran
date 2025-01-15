@@ -35,7 +35,7 @@ public class RaftNode
     {
         State = NodeState.Candidate;
         CurrentTerm++;
-        VotedFor = Id; 
+        VotedFor = Id;
     }
 
     public int GetVoteCount() => VotedFor == Id ? 1 : 0;
@@ -44,16 +44,24 @@ public class RaftNode
 
     // Test #3: Leader Recognition
     public void HandleAppendEntries(AppendEntriesRPC appendEntries)
-{
-    if (appendEntries.Term >= CurrentTerm)
     {
-        CurrentTerm = appendEntries.Term; 
-        State = NodeState.Follower; 
-        CurrentLeaderId = appendEntries.LeaderId; 
+        if (appendEntries.Term >= CurrentTerm)
+        {
+            CurrentTerm = appendEntries.Term;
+            State = NodeState.Follower;
+            CurrentLeaderId = appendEntries.LeaderId;
+        }
+        LastHeartbeat = DateTime.UtcNow;
     }
-    LastHeartbeat = DateTime.UtcNow; 
-}
+
+    // Test #4: AppendEntries Response
+    public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
+    {
+        HandleAppendEntries(rpc);
+        return new AppendEntriesResponse { Success = true };
+    }
 
 
-    
+
+
 }

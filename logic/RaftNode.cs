@@ -70,6 +70,10 @@ public class RaftNode
     // Test #4: AppendEntries Response
     public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
     {
+        if (rpc.Term < CurrentTerm)
+        {
+            return new AppendEntriesResponse { Success = false };
+        }
         HandleAppendEntries(rpc);
         return new AppendEntriesResponse { Success = true };
     }

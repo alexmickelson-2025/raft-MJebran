@@ -362,11 +362,31 @@ public class LeaderElectionTests
         var response = node.ProcessAppendEntries(appendEntries);
 
         // Assert
-        Assert.NotNull(response); 
-        Assert.True(response.Success); 
-        Assert.Equal(3, node.CurrentTerm); 
-        Assert.Equal(leaderId, node.CurrentLeaderId); 
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+        Assert.Equal(3, node.CurrentTerm);
+        Assert.Equal(leaderId, node.CurrentLeaderId);
     }
+
+    // Testing # 20  Given a candidate receives an AppendEntries from a previous term, then it rejects the request.
+    [Fact]
+    public void TestCandidateRejectsAppendEntriesFromPreviousTerm()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 3 };
+        var leaderId = Guid.NewGuid();
+        var appendEntries = new AppendEntriesRPC(leaderId, term: 2, new List<LogEntry>()); // Term is lower than current term
+
+        // Act
+        var response = node.ProcessAppendEntries(appendEntries);
+
+        // Assert
+        Assert.NotNull(response); 
+        Assert.False(response.Success); 
+        Assert.Equal(3, node.CurrentTerm); 
+        Assert.Null(node.CurrentLeaderId); 
+    }
+
 
 
 

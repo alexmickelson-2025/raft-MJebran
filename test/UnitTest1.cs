@@ -340,21 +340,33 @@ public class LeaderElectionTests
         node.StartElectionTimer(200); // Set an election timer of 200ms
 
         // Act
-        await Task.Delay(210); 
-        node.CheckElectionTimeout(); 
+        await Task.Delay(210);
+        node.CheckElectionTimeout();
 
         // Assert
         Assert.Equal(NodeState.Candidate, node.State);
-        Assert.Equal(4, node.CurrentTerm); 
-        Assert.True(node.HasVotedFor(node.Id)); 
+        Assert.Equal(4, node.CurrentTerm);
+        Assert.True(node.HasVotedFor(node.Id));
     }
 
+    // Testing # 19  When a follower node receives an AppendEntries request, it sends a response.
+    [Fact]
+    public void TestFollowerSendsResponseToAppendEntries()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Follower, CurrentTerm = 3 };
+        var leaderId = Guid.NewGuid();
+        var appendEntries = new AppendEntriesRPC(leaderId, term: 3, new List<LogEntry>());
 
+        // Act
+        var response = node.ProcessAppendEntries(appendEntries);
 
-
-
-
-
+        // Assert
+        Assert.NotNull(response); 
+        Assert.True(response.Success); 
+        Assert.Equal(3, node.CurrentTerm); 
+        Assert.Equal(leaderId, node.CurrentLeaderId); 
+    }
 
 
 

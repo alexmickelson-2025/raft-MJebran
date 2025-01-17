@@ -312,6 +312,26 @@ public class LeaderElectionTests
         Assert.NotEqual(newCandidateId, node.VotedFor);
     }
 
+    // Testing # 17  If a node receives a second request for vote for a future term, it should vote for that node.
+    [Fact]
+    public void TestVotesForFutureTermRequest()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Follower, CurrentTerm = 2, VotedFor = null };
+        var futureTerm = 3; // A term greater than the current term
+        var candidateId = Guid.NewGuid();
+        var requestForVote = new RequestForVoteRPC(term: futureTerm, candidateId: candidateId);
+
+        // Act
+        var response = node.HandleRequestForVote(requestForVote);
+
+        // Assert
+        Assert.True(response.VoteGranted); 
+        Assert.Equal(futureTerm, node.CurrentTerm); 
+        Assert.Equal(candidateId, node.VotedFor); 
+    }
+
+
 
 
 

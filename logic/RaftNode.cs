@@ -84,24 +84,27 @@ public class RaftNode
 
         if (rpc.Term > CurrentTerm)
         {
-            CurrentTerm = rpc.Term;
-            VotedFor = rpc.CandidateId;
+            CurrentTerm = rpc.Term; 
+            VotedFor = rpc.CandidateId; 
             return new RequestForVoteResponse { VoteGranted = true };
         }
 
+        // If the term is the same and the node hasn't voted, grant the vote
+        if (rpc.Term == CurrentTerm && VotedFor == null)
+        {
+            VotedFor = rpc.CandidateId; 
+            return new RequestForVoteResponse { VoteGranted = true };
+        }
+
+        // If the term is the same and the node has already voted, reject
         if (rpc.Term == CurrentTerm && VotedFor != null && VotedFor != rpc.CandidateId)
         {
             return new RequestForVoteResponse { VoteGranted = false };
         }
 
-        if (rpc.Term == CurrentTerm && VotedFor == null)
-        {
-            VotedFor = rpc.CandidateId;
-            return new RequestForVoteResponse { VoteGranted = true };
-        }
-
         return new RequestForVoteResponse { VoteGranted = false };
     }
+
 
     // Test #6: Randomized Election Timeout
     public void ResetElectionTimer()

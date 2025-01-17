@@ -6,6 +6,7 @@ namespace logic
         NodeState State { get; set; }
         Guid? CurrentLeaderId { get; }
         int CurrentTerm { get; set; }
+        List<IRaftNode> OtherNodes {get; set;}
         Guid? VotedFor { get; set; }
         void BecomeCandidate();
         void BecomeLeader();
@@ -21,5 +22,6 @@ namespace logic
         // void SetCluster(MockCluster cluster);
         void ReceiveVote();
         bool HasMajorityVotes(int totalNodes);
+
     }
 }

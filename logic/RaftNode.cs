@@ -169,6 +169,9 @@ public class RaftNode : IRaftNode
 
     public Action OnHeartbeat { get; set; }
 
+    // this one is not set so it
+    public List<IRaftNode> OtherNodes { get; set ; }
+
     public void StartHeartbeatTimer(int intervalMs)
     {
         if (State != NodeState.Leader) return; // Only leaders send heartbeats

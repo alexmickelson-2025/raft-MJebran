@@ -1,5 +1,5 @@
 ﻿@using logic; 
-@* @rendermode InteractiveServer; *@
+@rendermode InteractiveServer
 @page "/"
 
 <PageTitle>Home</PageTitle>
@@ -8,29 +8,53 @@
 
 Welcome to your new app.
 
-<button> </button>
+
+<button @onclick="startSimulation">Start</button>
+<div class="row"> 
+
+</div>
 
 
-@* @code{
 
-    List<SimulationNode>? nodes;
+@foreach(var node in nodes)
+{
+    <div class="p-3 col-4">
+        <div class="border p-3">
+
+        @node.Id
+        </div>
+    </div>
+}
+
+@code{
+
+    List<SimulationNode> nodes = [];
 
     void startSimulation()
     {
-        var node1 = new RaftNode([], 1);
-        var node2 = new RaftNode([], 2);
-        var node3 = new RaftNode([], 3);
+        var node1 = new RaftNode();
+        var node2 = new RaftNode();
+        var node3 = new RaftNode();
 
         var simulation1 = new SimulationNode(node1);
         var simulation2 = new SimulationNode(node2);
         var simulation3 = new SimulationNode(node3);
+
 
         node1.OtherNodes = [simulation2, simulation3];
         node2.OtherNodes = [simulation1, simulation3];
         node3.OtherNodes = [simulation1, simulation2];
 
         nodes= [simulation1, simulation2, simulation3];
+        StateHasChanged();
+        Timer timer= new Timer(_ =>
+        {
+            Console.WriteLine("here");
+            InvokeAsync(StateHasChanged);
+
+        },null, 0, 200);
 
 
     }
-}     *@
+}    
+    using System.Security.Cryptography;

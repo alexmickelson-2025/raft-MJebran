@@ -123,6 +123,19 @@ public class RaftNode
         }
     }
 
+    private int VotesReceived { get; set; } 
+
+    public void ReceiveVote()
+    {
+        VotesReceived++;
+    }
+
+    public bool HasMajorityVotes(int totalNodes)
+    {
+        return VotesReceived > totalNodes / 2;
+    }
+
+
 
 
 }

@@ -145,21 +145,48 @@ public class LeaderElectionTests
         Assert.Equal(2, node.CurrentTerm); // Ensure term is updated
     }
 
-   
-
     // Testing # 9 Election Timer Expiry
     [Fact]
     public async Task TestElectionTimerExpiry_StartsElection()
     {
         // Arrange
         var node = new RaftNode();
-        node.StartElectionTimer(300); 
+        node.StartElectionTimer(300);
         // Act
         await Task.Delay(310);
-        node.CheckElectionTimeout(); 
+        node.CheckElectionTimeout();
 
         // Assert
-        Assert.Equal(NodeState.Candidate, node.State); 
+        Assert.Equal(NodeState.Candidate, node.State);
+    }
+
+    // Testing # 10
+    // A node becomes a candidate (BecomeCandidate).
+    // Votes are received via ReceiveVote().
+    // Check if the node has received the majority of votes using HasMajorityVotes(totalNodes).
+    // If the majority is achieved, the candidate transitions to the leader state.
+
+    [Fact]
+    public void TestCandidateBecomesLeader_WhenMajorityVotesReceived()
+    {
+        // Arrange
+        var node = new RaftNode();
+        node.BecomeCandidate();
+        var totalNodes = 3;
+
+        // Act
+        for (int i = 0; i < 2; i++) 
+        {
+            node.ReceiveVote();
+        }
+
+        if (node.HasMajorityVotes(totalNodes))
+        {
+            node.State = NodeState.Leader;
+        }
+
+        // Assert
+        Assert.Equal(NodeState.Leader, node.State);
     }
 
 

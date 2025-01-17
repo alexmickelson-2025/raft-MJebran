@@ -89,7 +89,12 @@ public class RaftNode
             return new RequestForVoteResponse { VoteGranted = true };
         }
 
-        if (VotedFor == null || VotedFor == rpc.CandidateId)
+        if (rpc.Term == CurrentTerm && VotedFor != null && VotedFor != rpc.CandidateId)
+        {
+            return new RequestForVoteResponse { VoteGranted = false };
+        }
+
+        if (rpc.Term == CurrentTerm && VotedFor == null)
         {
             VotedFor = rpc.CandidateId;
             return new RequestForVoteResponse { VoteGranted = true };
@@ -136,11 +141,11 @@ public class RaftNode
     {
         return VotesReceived > totalNodes / 2;
     }
-    
+
     // Test #11: Heartbeat Timer Stop
     private System.Timers.Timer HeartbeatTimer { get; set; }
 
-    
+
     public Action OnHeartbeat { get; set; }
 
     public void StartHeartbeatTimer(int intervalMs)

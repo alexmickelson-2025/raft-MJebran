@@ -289,10 +289,29 @@ public class LeaderElectionTests
         node.HandleAppendEntries(appendEntries);
 
         // Assert
-        Assert.Equal(NodeState.Follower, node.State); 
-        Assert.Equal(2, node.CurrentTerm); 
+        Assert.Equal(NodeState.Follower, node.State);
+        Assert.Equal(2, node.CurrentTerm);
         Assert.Equal(leaderId, node.CurrentLeaderId);
     }
+
+    // Testing # 16 If a node receives a second request for vote for the same term, it should respond no.
+    [Fact]
+    public void TestRejectsDuplicateVoteRequestForSameTerm()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Follower, CurrentTerm = 3, VotedFor = Guid.NewGuid() };
+        var newCandidateId = Guid.NewGuid(); // A different candidate than the one already voted for
+        var requestForVote = new RequestForVoteRPC(term: 3, candidateId: newCandidateId);
+
+        // Act
+        var response = node.HandleRequestForVote(requestForVote);
+
+        // Assert
+        Assert.False(response.VoteGranted);
+        Assert.Equal(3, node.CurrentTerm);
+        Assert.NotEqual(newCandidateId, node.VotedFor);
+    }
+
 
 
 

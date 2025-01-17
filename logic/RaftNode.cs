@@ -59,6 +59,8 @@ public class RaftNode
             CurrentLeaderId = appendEntries.LeaderId; // Update the current leader
         }
 
+        ResetElectionTimer();
+
         // Reset the heartbeat timer
         LastHeartbeat = DateTime.UtcNow; //Reset 
     }

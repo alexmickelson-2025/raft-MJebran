@@ -194,20 +194,37 @@ public class LeaderElectionTests
     public async Task TestLeaderSendsHeartbeatWithin50ms()
     {
         // Arrange
-        var node = new RaftNode { State = NodeState.Leader }; 
+        var node = new RaftNode { State = NodeState.Leader };
         var heartbeatSent = false;
 
         // Mock method to simulate sending heartbeat
         node.OnHeartbeat = () => heartbeatSent = true;
 
         // Act
-        node.StartHeartbeatTimer(50); 
+        node.StartHeartbeatTimer(50);
         await Task.Delay(60);
 
         // Assert
-        Assert.True(heartbeatSent); 
+        Assert.True(heartbeatSent);
     }
 
+    // Testing # 12 When a follower does get an AppendEntries message, it resets the election timer.   
+    [Fact]
+    public void TestFollowerResetsElectionTimerOnAppendEntries()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Follower };
+        var appendEntries = new AppendEntriesRPC(Guid.NewGuid(), term: 1, new List<LogEntry>());
+        var initialElectionTimeout = node.ElectionTimeout;
+
+        // Act
+        node.HandleAppendEntries(appendEntries);
+        var newElectionTimeout = node.ElectionTimeout;
+
+        // Assert
+        Assert.NotEqual(initialElectionTimeout, newElectionTimeout); 
+        Assert.True(newElectionTimeout >= 150 && newElectionTimeout <= 300); 
+    }
 
 
 

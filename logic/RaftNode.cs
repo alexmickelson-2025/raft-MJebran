@@ -84,15 +84,15 @@ public class RaftNode
 
         if (rpc.Term > CurrentTerm)
         {
-            CurrentTerm = rpc.Term; 
-            VotedFor = rpc.CandidateId; 
+            CurrentTerm = rpc.Term;
+            VotedFor = rpc.CandidateId;
             return new RequestForVoteResponse { VoteGranted = true };
         }
 
         // If the term is the same and the node hasn't voted, grant the vote
         if (rpc.Term == CurrentTerm && VotedFor == null)
         {
-            VotedFor = rpc.CandidateId; 
+            VotedFor = rpc.CandidateId;
             return new RequestForVoteResponse { VoteGranted = true };
         }
 
@@ -127,9 +127,12 @@ public class RaftNode
 
     public void CheckElectionTimeout()
     {
-        if (State == NodeState.Follower && (DateTime.UtcNow - LastHeartbeat).TotalMilliseconds > ElectionTimeout)
+        if ((DateTime.UtcNow - LastHeartbeat).TotalMilliseconds > ElectionTimeout)
         {
-            StartElection();
+            if (State == NodeState.Follower || State == NodeState.Candidate)
+            {
+                StartElection();
+            }
         }
     }
     // Test #10: Heartbeat Timer Start
@@ -179,7 +182,8 @@ public class RaftNode
         }
     }
 
-    //
+
+
 
 
 

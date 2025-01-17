@@ -326,10 +326,29 @@ public class LeaderElectionTests
         var response = node.HandleRequestForVote(requestForVote);
 
         // Assert
-        Assert.True(response.VoteGranted); 
-        Assert.Equal(futureTerm, node.CurrentTerm); 
-        Assert.Equal(candidateId, node.VotedFor); 
+        Assert.True(response.VoteGranted);
+        Assert.Equal(futureTerm, node.CurrentTerm);
+        Assert.Equal(candidateId, node.VotedFor);
     }
+
+    // Testing # 18 Given a candidate, when an election timer expires inside of an election, a new election is started.
+    [Fact]
+    public async Task TestElectionRestartOnTimerExpiry()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 3 };
+        node.StartElectionTimer(200); // Set an election timer of 200ms
+
+        // Act
+        await Task.Delay(210); 
+        node.CheckElectionTimeout(); 
+
+        // Assert
+        Assert.Equal(NodeState.Candidate, node.State);
+        Assert.Equal(4, node.CurrentTerm); 
+        Assert.True(node.HasVotedFor(node.Id)); 
+    }
+
 
 
 

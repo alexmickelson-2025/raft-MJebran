@@ -13,7 +13,7 @@ public class RaftNode
     public NodeState State { get; set; }
     public Guid? CurrentLeaderId { get; private set; }
     public int CurrentTerm { get; set; }
-    public Guid? VotedFor { get; private set; }
+    public Guid? VotedFor { get; set; }
     public int ElectionTimeout { get; private set; }
     private DateTime LastHeartbeat;
 

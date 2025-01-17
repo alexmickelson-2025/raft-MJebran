@@ -234,8 +234,8 @@ public class LeaderElectionTests
         var node = new RaftNode();
         node.BecomeCandidate();
 
-        int totalNodes = 3; 
-        int majority = (totalNodes / 2) + 1; 
+        int totalNodes = 3;
+        int majority = (totalNodes / 2) + 1;
         int votesReceived = 0;
 
         // Simulate responses
@@ -256,6 +256,24 @@ public class LeaderElectionTests
         // Assert
         Assert.Equal(NodeState.Leader, node.State); // Node becomes leader
         Assert.Equal(majority, votesReceived); // Majority of votes were received
+    }
+
+    // Testing # 14 
+    [Fact]
+    public void TestFollowerVotesForRequestInEarlierTerm()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Follower, CurrentTerm = 1, VotedFor = null };
+        var candidateId = Guid.NewGuid();
+        var requestForVote = new RequestForVoteRPC(term: 2, candidateId: candidateId);
+
+        // Act
+        var response = node.HandleRequestForVote(requestForVote);
+
+        // Assert
+        Assert.True(response.VoteGranted); // Ensure the vote is granted
+        Assert.Equal(2, node.CurrentTerm); // Ensure the term is updated
+        Assert.Equal(candidateId, node.VotedFor); // Ensure the candidate is recorded as voted for
     }
 
 

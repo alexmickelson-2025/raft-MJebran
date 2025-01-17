@@ -258,7 +258,7 @@ public class LeaderElectionTests
         Assert.Equal(majority, votesReceived); // Majority of votes were received
     }
 
-    // Testing # 14 
+    // Testing # 14 A follower that has not voted and is in an earlier term responds to a RequestForVoteRPC with yes.
     [Fact]
     public void TestFollowerVotesForRequestInEarlierTerm()
     {
@@ -275,6 +275,25 @@ public class LeaderElectionTests
         Assert.Equal(2, node.CurrentTerm); // Ensure the term is updated
         Assert.Equal(candidateId, node.VotedFor); // Ensure the candidate is recorded as voted for
     }
+
+    //Testing # 15  Given a candidate, when it receives an AppendEntries message from a node with an equal term, the candidate loses and becomes a follower.
+    [Fact]
+    public void TestCandidateBecomesFollowerOnAppendEntriesWithEqualTerm()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 2 };
+        var leaderId = Guid.NewGuid();
+        var appendEntries = new AppendEntriesRPC(leaderId, term: 2, new List<LogEntry>());
+
+        // Act
+        node.HandleAppendEntries(appendEntries);
+
+        // Assert
+        Assert.Equal(NodeState.Follower, node.State); 
+        Assert.Equal(2, node.CurrentTerm); 
+        Assert.Equal(leaderId, node.CurrentLeaderId);
+    }
+
 
 
 

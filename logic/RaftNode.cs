@@ -125,7 +125,7 @@ public class RaftNode
         }
     }
     // Test #10: Heartbeat Timer Start
-    private int VotesReceived { get; set; }
+    private int VotesReceived { get; set; } = 0;
 
     public void ReceiveVote()
     {

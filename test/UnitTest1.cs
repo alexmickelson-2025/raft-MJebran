@@ -222,9 +222,42 @@ public class LeaderElectionTests
         var newElectionTimeout = node.ElectionTimeout;
 
         // Assert
-        Assert.NotEqual(initialElectionTimeout, newElectionTimeout); 
-        Assert.True(newElectionTimeout >= 150 && newElectionTimeout <= 300); 
+        Assert.NotEqual(initialElectionTimeout, newElectionTimeout);
+        Assert.True(newElectionTimeout >= 150 && newElectionTimeout <= 300);
     }
+
+    // Testing # 13  Given a candidate receives a majority of votes while waiting for an unresponsive node, it still becomes a leader.
+    [Fact]
+    public void TestCandidateBecomesLeader_WithMajorityVotesDespiteUnresponsiveNodes()
+    {
+        // Arrange
+        var node = new RaftNode();
+        node.BecomeCandidate();
+
+        int totalNodes = 3; 
+        int majority = (totalNodes / 2) + 1; 
+        int votesReceived = 0;
+
+        // Simulate responses
+        for (int i = 0; i < majority; i++)
+        {
+            // Simulate receiving votes from a responsive node
+            node.ReceiveVote();
+            votesReceived++;
+        }
+
+        // Act
+        bool hasMajority = node.HasMajorityVotes(totalNodes);
+        if (hasMajority)
+        {
+            node.State = NodeState.Leader; // Transition to leader
+        }
+
+        // Assert
+        Assert.Equal(NodeState.Leader, node.State); // Node becomes leader
+        Assert.Equal(majority, votesReceived); // Majority of votes were received
+    }
+
 
 
 

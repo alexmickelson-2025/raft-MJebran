@@ -1,4 +1,8 @@
-﻿namespace logic;
+﻿using test;
+
+namespace logic;
+
+
 
 public enum NodeState
 {
@@ -7,7 +11,7 @@ public enum NodeState
     Leader
 }
 
-public class RaftNode
+public class RaftNode : IRaftNode
 {
     public Guid Id { get; private set; }
     public NodeState State { get; set; }
@@ -16,6 +20,13 @@ public class RaftNode
     public Guid? VotedFor { get; set; }
     public int ElectionTimeout { get; private set; }
     private DateTime LastHeartbeat;
+    private MockCluster? _cluster;
+
+    public void SetCluster(MockCluster cluster)
+    {
+        _cluster = cluster;
+    }
+
 
     public RaftNode()
     {
@@ -177,6 +188,19 @@ public class RaftNode
         Console.WriteLine("Heartbeat sent to followers.");
     }
 
+    //private void SendHeartbeat()
+    // {
+    //     if (_cluster != null)
+    //     {
+    //         var heartbeat = new AppendEntriesRPC(
+    //             leaderId: Id,
+    //             term: CurrentTerm,
+    //             entries: new List<LogEntry>()
+    //         );
+    //         _cluster.SendHeartbeat(heartbeat);
+    //     }
+    // }
+
     public void StopHeartbeatTimer()
     {
         if (HeartbeatTimer != null)
@@ -186,11 +210,10 @@ public class RaftNode
         }
     }
 
-
-
-
-
-
-
+    public void BecomeLeader()
+    {
+        State = NodeState.Leader; // Transition to leader
+        SendHeartbeat(); // Send heartbeat to the cluster
+    }
 
 }

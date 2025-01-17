@@ -381,11 +381,29 @@ public class LeaderElectionTests
         var response = node.ProcessAppendEntries(appendEntries);
 
         // Assert
-        Assert.NotNull(response); 
-        Assert.False(response.Success); 
-        Assert.Equal(3, node.CurrentTerm); 
-        Assert.Null(node.CurrentLeaderId); 
+        Assert.NotNull(response);
+        Assert.False(response.Success);
+        Assert.Equal(3, node.CurrentTerm);
+        Assert.Null(node.CurrentLeaderId);
     }
+
+    // Testing 21  When a candidate wins an election, it immediately sends a heartbeat.
+    // [Fact]
+    // public void TestLeaderSendsHeartbeatAfterWinningElection()
+    // {
+    //     // Arrange
+    //     var node = new RaftNode { State = NodeState.Candidate, CurrentTerm = 3 };
+    //     var mockCluster = new MockCluster();
+    //     node.SetCluster(mockCluster);
+
+    //     // Act
+    //     node.BecomeLeader(); 
+
+    //     // Assert
+    //     Assert.Equal(NodeState.Leader, node.State); 
+    //     Assert.Equal(3, node.CurrentTerm); 
+    //     Assert.True(mockCluster.HeartbeatsSent); 
+    // }
 
 
 

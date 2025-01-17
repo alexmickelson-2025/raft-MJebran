@@ -122,8 +122,8 @@ public class RaftNode
             StartElection();
         }
     }
-
-    private int VotesReceived { get; set; } 
+    // Test #10: Heartbeat Timer Start
+    private int VotesReceived { get; set; }
 
     public void ReceiveVote()
     {
@@ -134,6 +134,43 @@ public class RaftNode
     {
         return VotesReceived > totalNodes / 2;
     }
+    
+    // Test #11: Heartbeat Timer Stop
+    private System.Timers.Timer HeartbeatTimer { get; set; }
+
+    
+    public Action OnHeartbeat { get; set; }
+
+    public void StartHeartbeatTimer(int intervalMs)
+    {
+        if (State != NodeState.Leader) return; // Only leaders send heartbeats
+        HeartbeatTimer = new System.Timers.Timer(intervalMs);
+        HeartbeatTimer.Elapsed += (sender, e) =>
+        {
+            SendHeartbeat();
+        };
+        HeartbeatTimer.AutoReset = true;
+        HeartbeatTimer.Start();
+    }
+
+    private void SendHeartbeat()
+    {
+        OnHeartbeat?.Invoke();
+
+        Console.WriteLine("Heartbeat sent to followers.");
+    }
+
+    public void StopHeartbeatTimer()
+    {
+        if (HeartbeatTimer != null)
+        {
+            HeartbeatTimer.Stop();
+            HeartbeatTimer.Dispose();
+        }
+    }
+
+    //
+
 
 
 

@@ -175,7 +175,7 @@ public class LeaderElectionTests
         var totalNodes = 3;
 
         // Act
-        for (int i = 0; i < 2; i++) 
+        for (int i = 0; i < 2; i++)
         {
             node.ReceiveVote();
         }
@@ -187,6 +187,25 @@ public class LeaderElectionTests
 
         // Assert
         Assert.Equal(NodeState.Leader, node.State);
+    }
+
+    // Testing # 11 Leader Heartbeat
+    [Fact]
+    public async Task TestLeaderSendsHeartbeatWithin50ms()
+    {
+        // Arrange
+        var node = new RaftNode { State = NodeState.Leader }; 
+        var heartbeatSent = false;
+
+        // Mock method to simulate sending heartbeat
+        node.OnHeartbeat = () => heartbeatSent = true;
+
+        // Act
+        node.StartHeartbeatTimer(50); 
+        await Task.Delay(60);
+
+        // Assert
+        Assert.True(heartbeatSent); 
     }
 
 

@@ -1,32 +1,24 @@
 ﻿using test;
-
 namespace logic;
 
-
-
-public enum NodeState
-{
-    Follower,
-    Candidate,
-    Leader
-}
+public enum NodeState {Follower, Candidate, Leader}
 
 public class RaftNode : IRaftNode
 {
     public Guid Id { get; private set; }
     public NodeState State { get; set; }
-    public Guid? CurrentLeaderId { get; private set; }
+    public Guid? CurrentLeaderId { get; set; }
     public int CurrentTerm { get; set; }
     public Guid? VotedFor { get; set; }
     public int ElectionTimeout { get; private set; }
-    private DateTime LastHeartbeat;
+    public DateTime LastHeartbeat;
     private MockCluster? _cluster;
+    public CancellationTokenSource CancellationTokenSource { get; set; }
 
     public void SetCluster(MockCluster cluster)
     {
         _cluster = cluster;
     }
-
 
     public RaftNode()
     {
@@ -36,12 +28,11 @@ public class RaftNode : IRaftNode
         CurrentLeaderId = null;
         VotedFor = null;
         ResetElectionTimer();
+        CancellationTokenSource = new CancellationTokenSource();
     }
 
-    // Test #1: Node Initialization
     public NodeState GetState() => State;
 
-    // Test #2: Candidate Self Voting
     public void BecomeCandidate()
     {
         State = NodeState.Candidate;
@@ -53,32 +44,23 @@ public class RaftNode : IRaftNode
 
     public bool HasVotedFor(Guid candidateId) => VotedFor == candidateId;
 
-    // Test #3: Leader Recognition
     public void HandleAppendEntries(AppendEntriesRPC appendEntries)
     {
-        // If the incoming term is greater, update the term, state, and leader
         if (appendEntries.Term > CurrentTerm)
         {
-            CurrentTerm = appendEntries.Term; // Update term
-            State = NodeState.Follower; // Transition to Follower state
-            CurrentLeaderId = appendEntries.LeaderId; // Update the current leader
+            CurrentTerm = appendEntries.Term;
+            State = NodeState.Follower;
+            CurrentLeaderId = appendEntries.LeaderId;
         }
         else if (appendEntries.Term == CurrentTerm)
         {
-            // If the term is the same, remain a follower and update leader ID
-            State = NodeState.Follower; // Ensure the node stays a follower
-            CurrentLeaderId = appendEntries.LeaderId; // Update the current leader
+            State = NodeState.Follower;
+            CurrentLeaderId = appendEntries.LeaderId;
         }
-
-        ResetElectionTimer();
-
-        // Reset the heartbeat timer
-        LastHeartbeat = DateTime.UtcNow; //Reset 
+        ResetElectionTimer(); 
     }
 
 
-
-    // Test #4: AppendEntries Response
     public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
     {
         if (rpc.Term < CurrentTerm)
@@ -89,7 +71,6 @@ public class RaftNode : IRaftNode
         return new AppendEntriesResponse { Success = true };
     }
 
-    // Test #5: Voting for Previous Term
     public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPC rpc)
     {
         if (rpc.Term < CurrentTerm)
@@ -97,44 +78,57 @@ public class RaftNode : IRaftNode
             return new RequestForVoteResponse { VoteGranted = false };
         }
 
-        if (rpc.Term > CurrentTerm)
+        if (rpc.Term > CurrentTerm || VotedFor == null)
         {
             CurrentTerm = rpc.Term;
             VotedFor = rpc.CandidateId;
             return new RequestForVoteResponse { VoteGranted = true };
         }
 
-        // If the term is the same and the node hasn't voted, grant the vote
-        if (rpc.Term == CurrentTerm && VotedFor == null)
-        {
-            VotedFor = rpc.CandidateId;
-            return new RequestForVoteResponse { VoteGranted = true };
-        }
-
-        // If the term is the same and the node has already voted, reject
-        if (rpc.Term == CurrentTerm && VotedFor != null && VotedFor != rpc.CandidateId)
-        {
-            return new RequestForVoteResponse { VoteGranted = false };
-        }
-
         return new RequestForVoteResponse { VoteGranted = false };
     }
 
-
-    // Test #6: Randomized Election Timeout
     public void ResetElectionTimer()
     {
         var random = new Random();
         ElectionTimeout = random.Next(150, 301);
+        LastHeartbeat = DateTime.UtcNow;
     }
 
-    // Test #7: Term Increment on Election Start
     public void StartElection()
     {
-        BecomeCandidate();
+        State = NodeState.Candidate;
+        CurrentTerm++;
+        VotedFor = Id;
+        VotesReceived = 1;
+        foreach (var node in OtherNodes)
+        {
+            var voteRequest = new RequestForVoteRPC(CurrentTerm, Id);
+            var voteResponse = node.HandleRequestForVote(voteRequest);
+            if (voteResponse.VoteGranted)
+            {
+                ReceiveVote();
+            }
+        }
+
+        if (HasMajorityVotes(OtherNodes.Count + 1))
+        {
+            BecomeLeader();
+        }
     }
 
-    // Test #9: Election Timer Expiry
+    public void RunElectionLoop()
+    {
+        Task.Run(async () =>
+        {
+            while (!CancellationTokenSource.Token.IsCancellationRequested)
+            {
+                CheckElectionTimeout();
+                await Task.Delay(50); 
+            }
+        }, CancellationTokenSource.Token);
+    }
+
     public void StartElectionTimer(int timeoutMs)
     {
         LastHeartbeat = DateTime.UtcNow.AddMilliseconds(-timeoutMs);
@@ -144,13 +138,32 @@ public class RaftNode : IRaftNode
     {
         if ((DateTime.UtcNow - LastHeartbeat).TotalMilliseconds > ElectionTimeout)
         {
-            if (State == NodeState.Follower || State == NodeState.Candidate)
+            if (State == NodeState.Follower)
             {
                 StartElection();
             }
+            else if (State == NodeState.Candidate)
+            {
+                CurrentTerm++;
+                VotesReceived = 1; 
+                foreach (var node in OtherNodes)
+                {
+                    var voteRequest = new RequestForVoteRPC(CurrentTerm, Id);
+                    var voteResponse = node.HandleRequestForVote(voteRequest);
+                    if (voteResponse.VoteGranted)
+                    {
+                        ReceiveVote();
+                    }
+                }
+
+                if (HasMajorityVotes(OtherNodes.Count + 1))
+                {
+                    BecomeLeader();
+                }
+            }
         }
     }
-    // Test #10: Heartbeat Timer Start
+
     private int VotesReceived { get; set; } = 0;
 
     public void ReceiveVote()
@@ -163,18 +176,16 @@ public class RaftNode : IRaftNode
         return VotesReceived > totalNodes / 2;
     }
 
-    // Test #11: Heartbeat Timer Stop
     private System.Timers.Timer HeartbeatTimer { get; set; }
 
 
     public Action OnHeartbeat { get; set; }
 
-    // this one is not set so it
-    public List<IRaftNode> OtherNodes { get; set ; }
+    public List<IRaftNode> OtherNodes { get; set; }
 
     public void StartHeartbeatTimer(int intervalMs)
     {
-        if (State != NodeState.Leader) return; // Only leaders send heartbeats
+        if (State != NodeState.Leader) return;
         HeartbeatTimer = new System.Timers.Timer(intervalMs);
         HeartbeatTimer.Elapsed += (sender, e) =>
         {
@@ -186,23 +197,14 @@ public class RaftNode : IRaftNode
 
     private void SendHeartbeat()
     {
-        OnHeartbeat?.Invoke();
+        if (State != NodeState.Leader) return;
 
-        Console.WriteLine("Heartbeat sent to followers.");
+        foreach (var node in OtherNodes)
+        {
+            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry>());
+            node.ProcessAppendEntries(heartbeat);
+        }
     }
-
-    //private void SendHeartbeat()
-    // {
-    //     if (_cluster != null)
-    //     {
-    //         var heartbeat = new AppendEntriesRPC(
-    //             leaderId: Id,
-    //             term: CurrentTerm,
-    //             entries: new List<LogEntry>()
-    //         );
-    //         _cluster.SendHeartbeat(heartbeat);
-    //     }
-    // }
 
     public void StopHeartbeatTimer()
     {
@@ -215,8 +217,26 @@ public class RaftNode : IRaftNode
 
     public void BecomeLeader()
     {
-        State = NodeState.Leader; // Transition to leader
-        SendHeartbeat(); // Send heartbeat to the cluster
+        State = NodeState.Leader;
+        SendHeartbeat();
     }
 
+    public void SendCommand(ClientCommandData command)
+    {
+        if (State == NodeState.Leader)
+        {
+            Console.WriteLine($"Leader {Id} processing command: {command.Type} {command.Key} = {command.Value}");
+            command.RespondToClient(true, Id);
+        }
+        else if (CurrentLeaderId.HasValue)
+        {
+            Console.WriteLine($"Node {Id} forwarding command to leader {CurrentLeaderId}");
+            command.RespondToClient(false, CurrentLeaderId);
+        }
+        else
+        {
+            Console.WriteLine($"Node {Id} unable to process command: No leader");
+            command.RespondToClient(false, null);
+        }
+    }
 }

@@ -4,20 +4,6 @@ namespace test;
 
 public class LeaderElectionTests
 {
-    // [Fact]
-    // public void FollowerStaysFollowerOnHeartbeat()
-    // {
-    //     //Given: A follower gets a heartbeat message within the timeout.
-    //     var node = new RaftNode();
-    //     node.State = NodeState.Follower;
-    //     // When: It processes the heartbeat.
-    //     node.processHeartbeat();
-    //     // Then: It stays a follower.
-    //     Assert.Equal(NodeState.Follower, node.State);
-    // }
-
-
-
     // Testing according to part Two of Readme
     // Testing # 1: Node Initialization
     [Fact]
@@ -120,7 +106,11 @@ public class LeaderElectionTests
     public void TestTermIncrementOnElectionStart_IncreasesTerm()
     {
         // Arrange
-        var node = new RaftNode { CurrentTerm = 1 };
+        var node = new RaftNode
+        {
+            OtherNodes = new List<IRaftNode>()
+        };
+        node.CurrentTerm = 1;
 
         // Act
         node.StartElection();
@@ -128,6 +118,7 @@ public class LeaderElectionTests
         // Assert
         Assert.Equal(2, node.CurrentTerm);
     }
+
 
     // Testing # 8 Follower Receiving Lower Term AppendEntries
     [Fact]
@@ -405,6 +396,25 @@ public class LeaderElectionTests
     //     Assert.True(mockCluster.HeartbeatsSent); 
     // }
 
+    // -------------------------------------------5.3 & 5.4.2-------------------------------------------
+    // Testing # 22 section 5.3 & 5.4.2 Follower becomes candidate after timeout
+    [Fact]
+    public void FollowerBecomesCandidateAfterTimeout()
+    {
+        // Arrange
+        var node = new RaftNode();
+        node.CurrentTerm = 1;
+        node.State = NodeState.Follower;
+        node.LastHeartbeat = DateTime.UtcNow.AddMilliseconds(-node.ElectionTimeout - 1);
+
+        // Act
+        node.CheckElectionTimeout();
+
+        // Assert
+        Assert.Equal(NodeState.Candidate, node.State);
+        Assert.Equal(2, node.CurrentTerm); 
+        Assert.Equal(node.Id, node.VotedFor);
+    }
 
 
 

@@ -18,6 +18,8 @@ public class RaftNode : IRaftNode
     public int CommitIndex { get; private set; }
     private Dictionary<Guid, int> nextIndex = new Dictionary<Guid, int>();
     public Action<LogEntry>? OnApplyLogEntry { get; set; }
+    private Dictionary<int, int> acknowledgmentCounts = new Dictionary<int, int>();
+
 
 
     public void SetCluster(MockCluster cluster)
@@ -271,6 +273,54 @@ public class RaftNode : IRaftNode
         }
     }
 
+    public void ReceiveAppendEntriesAck(Guid followerId, LogEntry logEntry)
+    {
+        var logIndex = Log.IndexOf(logEntry);
+
+        if (logIndex == -1)
+        {
+            Console.WriteLine($"Log entry not found for acknowledgment: {logEntry.Command}");
+            return;
+        }
+
+        if (!acknowledgmentCounts.ContainsKey(logIndex))
+        {
+            acknowledgmentCounts[logIndex] = 1; // Leader counts as one acknowledgment
+            Console.WriteLine($"Log entry {logIndex} initialized with acknowledgment count: 1");
+        }
+        else
+        {
+            acknowledgmentCounts[logIndex]++;
+            Console.WriteLine($"Log entry {logIndex} acknowledgment count incremented to: {acknowledgmentCounts[logIndex]}");
+        }
+
+        foreach (var entry in acknowledgmentCounts)
+        {
+            Console.WriteLine($"Log entry {entry.Key}: {entry.Value} acknowledgments");
+        }
+    }
+
+
+    public void UpdateCommitIndex()
+    {
+        foreach (var entry in acknowledgmentCounts)
+        {
+            int logIndex = entry.Key;
+            int ackCount = entry.Value;
+
+            Console.WriteLine($"Log entry {logIndex} has {ackCount} acknowledgments.");
+
+            if (ackCount > (OtherNodes.Count + 1) / 2 && logIndex > CommitIndex)
+            {
+                CommitIndex = logIndex;
+                Console.WriteLine($"CommitIndex updated to {CommitIndex}");
+                ApplyCommittedEntries();
+            }
+        }
+    }
+
+
+
     public void SendCommand(ClientCommandData command)
     {
         if (State == NodeState.Leader)
@@ -281,7 +331,6 @@ public class RaftNode : IRaftNode
             var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
             Log.Add(logEntry);
 
-            // Include CommitIndex in AppendEntriesRPC
             var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry }, CommitIndex);
 
             foreach (var follower in OtherNodes ?? new List<IRaftNode>())

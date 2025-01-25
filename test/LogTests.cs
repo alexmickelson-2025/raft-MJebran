@@ -146,8 +146,8 @@ public class LogTests
     var follower = new RaftNode { State = NodeState.Follower };
 
     var logEntry = new LogEntry(1, "Set key1=value1");
-    follower.Log.Add(logEntry); 
-    follower.SetCommitIndexForTesting(0); 
+    follower.Log.Add(logEntry);
+    follower.SetCommitIndexForTesting(0);
 
     bool isAppliedToStateMachine = false;
     follower.OnApplyLogEntry = (entry) =>
@@ -164,6 +164,49 @@ public class LogTests
     // Assert
     Assert.True(isAppliedToStateMachine, "The committed log entry was not applied to the follower's state machine.");
   }
+
+
+  //when the leader has received a majority confirmation of a log, it commits it
+  [Fact]
+  public void LeaderCommitsLogAfterMajorityAcknowledgment()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    var follower3 = Substitute.For<IRaftNode>();
+
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2, follower3 };
+
+    var logEntry = new LogEntry(1, "Set key1=value1");
+    leader.Log.Add(logEntry);
+
+    var rpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+
+    follower1.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
+    follower2.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
+    follower3.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = false }); // One failure
+
+    // Act
+    foreach (var follower in leader.OtherNodes)
+    {
+      var response = follower.ProcessAppendEntries(rpc);
+      if (response.Success)
+      {
+        leader.ReceiveAppendEntriesAck(follower.Id, logEntry);
+      }
+    }
+
+    leader.UpdateCommitIndex();
+
+    // Assert
+    Assert.Equal(1, leader.CommitIndex); 
+  }
+
+
+
+
+
 
 
 

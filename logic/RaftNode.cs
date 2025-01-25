@@ -14,8 +14,9 @@ public class RaftNode : IRaftNode
     public DateTime LastHeartbeat;
     private MockCluster? _cluster;
     public CancellationTokenSource CancellationTokenSource { get; set; }
-    private List<LogEntry> Log { get; set; } = new();
+    public List<LogEntry> Log { get; private set; } = new List<LogEntry>();
     private int CommitIndex { get; set; }
+
 
     public void SetCluster(MockCluster cluster)
     {
@@ -31,6 +32,10 @@ public class RaftNode : IRaftNode
         VotedFor = null;
         ResetElectionTimer();
         CancellationTokenSource = new CancellationTokenSource();
+        OtherNodes = new List<IRaftNode>();
+        HeartbeatTimer = null;
+        OnHeartbeat = () => { };
+
     }
 
     public NodeState GetState() => State;
@@ -230,18 +235,16 @@ public class RaftNode : IRaftNode
             Console.WriteLine($"Leader {Id} processing command: {command.Type} {command.Key} = {command.Value}");
             command.RespondToClient(true, Id);
 
-            // Append the command to the leader's log
             var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
             Log.Add(logEntry);
 
-            // Create an AppendEntriesRPC with the log entry
             var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry });
 
-            // Send the AppendEntriesRPC to all follower nodes
-            foreach (var follower in OtherNodes)
+            foreach (var follower in OtherNodes ?? new List<IRaftNode>())
             {
                 follower.HandleAppendEntries(appendEntriesRpc);
             }
+
         }
         else if (CurrentLeaderId.HasValue)
         {

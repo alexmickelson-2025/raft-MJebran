@@ -275,7 +275,7 @@ public class RaftNode : IRaftNode
 
     public void ReceiveAppendEntriesAck(Guid followerId, LogEntry logEntry)
     {
-        var logIndex = Log.IndexOf(logEntry);
+        int logIndex = Log.IndexOf(logEntry);
 
         if (logIndex == -1)
         {
@@ -285,41 +285,32 @@ public class RaftNode : IRaftNode
 
         if (!acknowledgmentCounts.ContainsKey(logIndex))
         {
-            acknowledgmentCounts[logIndex] = 1; // Leader counts as one acknowledgment
-            Console.WriteLine($"Log entry {logIndex} initialized with acknowledgment count: 1");
+            acknowledgmentCounts[logIndex] = 1;
         }
         else
         {
             acknowledgmentCounts[logIndex]++;
-            Console.WriteLine($"Log entry {logIndex} acknowledgment count incremented to: {acknowledgmentCounts[logIndex]}");
         }
 
-        foreach (var entry in acknowledgmentCounts)
-        {
-            Console.WriteLine($"Log entry {entry.Key}: {entry.Value} acknowledgments");
-        }
+        Console.WriteLine($"Acknowledgment for log entry {logIndex}: {acknowledgmentCounts[logIndex]}");
     }
 
 
     public void UpdateCommitIndex()
     {
-        foreach (var entry in acknowledgmentCounts)
+        for (int i = CommitIndex + 1; i <= Log.Count; i++)
         {
-            int logIndex = entry.Key;
-            int ackCount = entry.Value;
+            int ackCount = OtherNodes.Count(follower => acknowledgmentCounts.ContainsKey(i) && acknowledgmentCounts[i] > 0);
 
-            Console.WriteLine($"Log entry {logIndex} has {ackCount} acknowledgments.");
-
-            if (ackCount > (OtherNodes.Count + 1) / 2 && logIndex > CommitIndex)
+            if (ackCount + 1 > (OtherNodes.Count + 1) / 2)
             {
-                CommitIndex = logIndex;
+                CommitIndex = i;
                 Console.WriteLine($"CommitIndex updated to {CommitIndex}");
-                ApplyCommittedEntries();
             }
         }
+
+        ApplyCommittedEntries();
     }
-
-
 
     public void SendCommand(ClientCommandData command)
     {

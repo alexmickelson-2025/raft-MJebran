@@ -185,7 +185,7 @@ public class LogTests
 
     follower1.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
     follower2.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
-    follower3.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = false }); // One failure
+    follower3.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = false });
 
     // Act
     foreach (var follower in leader.OtherNodes)
@@ -200,13 +200,48 @@ public class LogTests
     leader.UpdateCommitIndex();
 
     // Assert
-    Assert.Equal(1, leader.CommitIndex); 
+    Assert.Equal(0, leader.CommitIndex);
+
   }
 
+  //the leader commits logs by incrementing its committed log index
+  [Fact]
+  public void LeaderIncrementsCommitIndexWhenLogsAreCommitted()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    var follower3 = Substitute.For<IRaftNode>();
 
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2, follower3 };
 
+    var logEntry1 = new LogEntry(1, "Set key1=value1");
+    var logEntry2 = new LogEntry(1, "Set key2=value2");
+    leader.Log.Add(logEntry1);
+    leader.Log.Add(logEntry2);
 
+    var rpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, leader.Log, leader.CommitIndex);
+    follower1.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
+    follower2.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
+    follower3.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = false });
 
+    // Act
+    foreach (var follower in leader.OtherNodes)
+    {
+      var response = follower.ProcessAppendEntries(rpc);
+      if (response.Success)
+      {
+        leader.ReceiveAppendEntriesAck(follower.Id, logEntry1);
+        leader.ReceiveAppendEntriesAck(follower.Id, logEntry2);
+      }
+    }
+
+    leader.UpdateCommitIndex();
+
+    // Assert
+    Assert.Equal(1, leader.CommitIndex);
+  }
 
 
 

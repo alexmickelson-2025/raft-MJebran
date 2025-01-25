@@ -243,8 +243,33 @@ public class LogTests
     Assert.Equal(1, leader.CommitIndex);
   }
 
+  // given a follower receives an appendentries with log(s) it will add those entries to its personal log
+  [Fact]
+  public void FollowerAppendsLogEntriesFromAppendEntriesRPC()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
 
+    var incomingLogEntries = new List<LogEntry>
+    {
+        new LogEntry(1, "Set key1=value1"),
+        new LogEntry(1, "Set key2=value2")
+    };
 
+    var appendEntriesRpc = new AppendEntriesRPC(
+        leaderId: Guid.NewGuid(),
+        term: 1,
+        entries: incomingLogEntries,
+        commitIndex: 0
+    );
 
+    // Act
+    follower.HandleAppendEntries(appendEntriesRpc);
+
+    // Assert
+    Assert.Equal(2, follower.Log.Count);
+    Assert.Equal(incomingLogEntries[0].Command, follower.Log[0].Command); 
+    Assert.Equal(incomingLogEntries[1].Command, follower.Log[1].Command); 
+  }
 
 }

@@ -68,8 +68,18 @@ public class RaftNode : IRaftNode
             State = NodeState.Follower;
             CurrentLeaderId = appendEntries.LeaderId;
         }
+
+        foreach (var entry in appendEntries.Entries)
+        {
+            if (!Log.Any(existingEntry => existingEntry.Term == entry.Term && existingEntry.Command == entry.Command))
+            {
+                Log.Add(entry);
+            }
+        }
+
         ResetElectionTimer();
     }
+
 
 
     public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)

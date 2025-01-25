@@ -41,21 +41,37 @@ public class LogTests
     leaderNode.OtherNodes = new List<IRaftNode>();
 
     var command = new ClientCommandData(
-        ClientCommandType.Set, 
-        "key1",                
-        "value1",             
-        Substitute.For<Action<bool, Guid?>>() 
+        ClientCommandType.Set,
+        "key1",
+        "value1",
+        Substitute.For<Action<bool, Guid?>>()
     );
 
     // Act
     leaderNode.SendCommand(command);
 
     // Assert
-    Assert.Single(leaderNode.Log); 
+    Assert.Single(leaderNode.Log);
     var logEntry = leaderNode.Log[0];
-    Assert.Equal("Set key1=value1", logEntry.Command); 
+    Assert.Equal("Set key1=value1", logEntry.Command);
     Assert.Equal(leaderNode.CurrentTerm, logEntry.Term);
   }
+
+  // when a node is new, its log is empty
+  [Fact]
+  public void NewNodeLogIsEmpty()
+  {
+    // Arrange
+    var newNode = new RaftNode();
+
+    // Act
+    var logEntries = newNode.Log;
+
+    // Assert
+    Assert.NotNull(logEntries); 
+    Assert.Empty(logEntries);   
+  }
+
 
 
 

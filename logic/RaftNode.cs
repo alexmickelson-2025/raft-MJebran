@@ -15,7 +15,7 @@ public class RaftNode : IRaftNode
     private MockCluster? _cluster;
     public CancellationTokenSource CancellationTokenSource { get; set; }
     public List<LogEntry> Log { get; private set; } = new List<LogEntry>();
-    private int CommitIndex { get; set; }
+    public int CommitIndex { get; private set; }
     private Dictionary<Guid, int> nextIndex = new Dictionary<Guid, int>();
 
 
@@ -203,16 +203,17 @@ public class RaftNode : IRaftNode
         HeartbeatTimer.Start();
     }
 
-    private void SendHeartbeat()
+    public void SendHeartbeat()
     {
         if (State != NodeState.Leader) return;
 
         foreach (var node in OtherNodes)
         {
-            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry>());
-            node.ProcessAppendEntries(heartbeat);
+            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry>(), CommitIndex);
+            node.HandleAppendEntries(heartbeat);
         }
     }
+
 
     public void StopHeartbeatTimer()
     {
@@ -243,13 +244,18 @@ public class RaftNode : IRaftNode
     {
         return nextIndex.ContainsKey(followerId) ? nextIndex[followerId] : -1;
     }
-    
+
     public void UpdateNextIndexForFollower(Guid followerId, int newIndex)
     {
         if (nextIndex.ContainsKey(followerId))
         {
             nextIndex[followerId] = newIndex;
         }
+    }
+
+    public void SetCommitIndexForTesting(int value)
+    {
+        CommitIndex = value;
     }
 
     public void SendCommand(ClientCommandData command)
@@ -262,13 +268,13 @@ public class RaftNode : IRaftNode
             var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
             Log.Add(logEntry);
 
-            var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry });
+            // Include CommitIndex in AppendEntriesRPC
+            var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry }, CommitIndex);
 
             foreach (var follower in OtherNodes ?? new List<IRaftNode>())
             {
                 follower.HandleAppendEntries(appendEntriesRpc);
             }
-
         }
         else if (CurrentLeaderId.HasValue)
         {
@@ -281,6 +287,7 @@ public class RaftNode : IRaftNode
             command.RespondToClient(false, null);
         }
     }
+
 
 
 }

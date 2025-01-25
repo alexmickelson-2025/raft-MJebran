@@ -3,12 +3,14 @@ public class AppendEntriesRPC
     public Guid LeaderId { get; private set; }
     public int Term { get; private set; }
     public List<LogEntry> Entries { get; private set; }
+    public int CommitIndex { get; set; }
 
-    public AppendEntriesRPC(Guid leaderId, int term, List<LogEntry> entries)
+    public AppendEntriesRPC(Guid leaderId, int term, List<LogEntry> entries, int commitIndex)
     {
         LeaderId = leaderId;
         Term = term;
-        Entries = entries ?? new List<LogEntry>();
+        Entries = entries;
+        CommitIndex = commitIndex;
     }
 }
 

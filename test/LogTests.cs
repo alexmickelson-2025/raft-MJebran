@@ -118,6 +118,26 @@ public class LogTests
     Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
   }
 
+  // Highest committed index from the leader is included in AppendEntries RPC's
+  [Fact]
+  public void AppendEntriesIncludesHighestCommittedIndex()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader };
+    leader.SetCommitIndexForTesting(5);
+
+    var followerMock = Substitute.For<IRaftNode>();
+    leader.OtherNodes = new List<IRaftNode> { followerMock };
+
+    // Act
+    leader.SendHeartbeat();
+
+    // Assert
+    followerMock.Received().HandleAppendEntries(
+        Arg.Is<AppendEntriesRPC>(rpc => rpc.CommitIndex == leader.CommitIndex)
+    );
+  }
+
 
 
 

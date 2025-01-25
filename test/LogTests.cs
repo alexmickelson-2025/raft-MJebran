@@ -94,7 +94,29 @@ public class LogTests
     Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
   }
 
+  //leaders maintain an "nextIndex" for each follower that is the index of the next log entry the leader will send to that follower
+  [Fact]
+  public void LeaderMaintainsNextIndexForEachFollower()
+  {
+    // Arrange
+    var leader = new RaftNode();
+    leader.Log.Add(new LogEntry(1, "Set x=1"));
+    leader.Log.Add(new LogEntry(1, "Set y=2"));
 
+    var follower1 = new RaftNode();
+    var follower2 = new RaftNode();
+
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2 };
+
+    // Act
+    leader.BecomeLeader();
+
+    // Assert
+    Assert.True(leader.HasNextIndexForFollower(follower1.Id));
+    Assert.True(leader.HasNextIndexForFollower(follower2.Id));
+    Assert.Equal(3, leader.GetNextIndexForFollower(follower1.Id));
+    Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
+  }
 
 
 

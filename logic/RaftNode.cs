@@ -234,9 +234,22 @@ public class RaftNode : IRaftNode
         SendHeartbeat();
     }
 
+    public bool HasNextIndexForFollower(Guid followerId)
+    {
+        return nextIndex.ContainsKey(followerId);
+    }
+
     public int GetNextIndexForFollower(Guid followerId)
     {
         return nextIndex.ContainsKey(followerId) ? nextIndex[followerId] : -1;
+    }
+    
+    public void UpdateNextIndexForFollower(Guid followerId, int newIndex)
+    {
+        if (nextIndex.ContainsKey(followerId))
+        {
+            nextIndex[followerId] = newIndex;
+        }
     }
 
     public void SendCommand(ClientCommandData command)

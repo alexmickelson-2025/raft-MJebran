@@ -1,7 +1,7 @@
 ﻿using test;
 namespace logic;
 
-public enum NodeState {Follower, Candidate, Leader}
+public enum NodeState { Follower, Candidate, Leader }
 
 public class RaftNode : IRaftNode
 {
@@ -14,6 +14,8 @@ public class RaftNode : IRaftNode
     public DateTime LastHeartbeat;
     private MockCluster? _cluster;
     public CancellationTokenSource CancellationTokenSource { get; set; }
+    private List<LogEntry> Log { get; set; } = new();
+    private int CommitIndex { get; set; }
 
     public void SetCluster(MockCluster cluster)
     {
@@ -57,7 +59,7 @@ public class RaftNode : IRaftNode
             State = NodeState.Follower;
             CurrentLeaderId = appendEntries.LeaderId;
         }
-        ResetElectionTimer(); 
+        ResetElectionTimer();
     }
 
 
@@ -124,7 +126,7 @@ public class RaftNode : IRaftNode
             while (!CancellationTokenSource.Token.IsCancellationRequested)
             {
                 CheckElectionTimeout();
-                await Task.Delay(50); 
+                await Task.Delay(50);
             }
         }, CancellationTokenSource.Token);
     }
@@ -145,7 +147,7 @@ public class RaftNode : IRaftNode
             else if (State == NodeState.Candidate)
             {
                 CurrentTerm++;
-                VotesReceived = 1; 
+                VotesReceived = 1;
                 foreach (var node in OtherNodes)
                 {
                     var voteRequest = new RequestForVoteRPC(CurrentTerm, Id);
@@ -227,6 +229,19 @@ public class RaftNode : IRaftNode
         {
             Console.WriteLine($"Leader {Id} processing command: {command.Type} {command.Key} = {command.Value}");
             command.RespondToClient(true, Id);
+
+            // Append the command to the leader's log
+            var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
+            Log.Add(logEntry);
+
+            // Create an AppendEntriesRPC with the log entry
+            var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry });
+
+            // Send the AppendEntriesRPC to all follower nodes
+            foreach (var follower in OtherNodes)
+            {
+                follower.HandleAppendEntries(appendEntriesRpc);
+            }
         }
         else if (CurrentLeaderId.HasValue)
         {
@@ -239,4 +254,6 @@ public class RaftNode : IRaftNode
             command.RespondToClient(false, null);
         }
     }
+
+
 }

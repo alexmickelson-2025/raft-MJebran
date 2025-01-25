@@ -16,6 +16,7 @@ public class RaftNode : IRaftNode
     public CancellationTokenSource CancellationTokenSource { get; set; }
     public List<LogEntry> Log { get; private set; } = new List<LogEntry>();
     private int CommitIndex { get; set; }
+    private Dictionary<Guid, int> nextIndex = new Dictionary<Guid, int>();
 
 
     public void SetCluster(MockCluster cluster)
@@ -225,7 +226,17 @@ public class RaftNode : IRaftNode
     public void BecomeLeader()
     {
         State = NodeState.Leader;
+        int lastLogIndex = Log.Count;
+        foreach (var follower in OtherNodes)
+        {
+            nextIndex[follower.Id] = lastLogIndex + 1;
+        }
         SendHeartbeat();
+    }
+
+    public int GetNextIndexForFollower(Guid followerId)
+    {
+        return nextIndex.ContainsKey(followerId) ? nextIndex[followerId] : -1;
     }
 
     public void SendCommand(ClientCommandData command)

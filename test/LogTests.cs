@@ -68,9 +68,32 @@ public class LogTests
     var logEntries = newNode.Log;
 
     // Assert
-    Assert.NotNull(logEntries); 
-    Assert.Empty(logEntries);   
+    Assert.NotNull(logEntries);
+    Assert.Empty(logEntries);
   }
+
+  // when a leader wins an election, it initializes the nextIndex for each follower to the index just after the last one it its log
+  [Fact]
+  public void LeaderInitializesNextIndexForEachFollower()
+  {
+    // Arrange
+    var leader = new RaftNode();
+    leader.Log.Add(new LogEntry(1, "Set x=1"));
+    leader.Log.Add(new LogEntry(1, "Set y=2"));
+
+    var follower1 = new RaftNode();
+    var follower2 = new RaftNode();
+
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2 };
+
+    // Act
+    leader.BecomeLeader();
+
+    // Assert
+    Assert.Equal(3, leader.GetNextIndexForFollower(follower1.Id));
+    Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
+  }
+
 
 
 

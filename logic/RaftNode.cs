@@ -17,6 +17,7 @@ public class RaftNode : IRaftNode
     public List<LogEntry> Log { get; private set; } = new List<LogEntry>();
     public int CommitIndex { get; private set; }
     private Dictionary<Guid, int> nextIndex = new Dictionary<Guid, int>();
+    public Action<LogEntry>? OnApplyLogEntry { get; set; }
 
 
     public void SetCluster(MockCluster cluster)
@@ -256,6 +257,18 @@ public class RaftNode : IRaftNode
     public void SetCommitIndexForTesting(int value)
     {
         CommitIndex = value;
+    }
+
+    public void ApplyCommittedEntries()
+    {
+        for (int i = CommitIndex; i < Log.Count; i++)
+        {
+            if (i < Log.Count)
+            {
+                var logEntry = Log[i];
+                OnApplyLogEntry?.Invoke(logEntry);
+            }
+        }
     }
 
     public void SendCommand(ClientCommandData command)

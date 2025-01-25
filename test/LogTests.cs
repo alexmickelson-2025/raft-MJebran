@@ -138,6 +138,32 @@ public class LogTests
     );
   }
 
+  //When a follower learns that a log entry is committed, it applies the entry to its local state machine
+  [Fact]
+  public void FollowerAppliesCommittedEntryToStateMachine()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower };
+
+    var logEntry = new LogEntry(1, "Set key1=value1");
+    follower.Log.Add(logEntry); 
+    follower.SetCommitIndexForTesting(0); 
+
+    bool isAppliedToStateMachine = false;
+    follower.OnApplyLogEntry = (entry) =>
+    {
+      if (entry == logEntry)
+      {
+        isAppliedToStateMachine = true;
+      }
+    };
+
+    // Act
+    follower.ApplyCommittedEntries();
+
+    // Assert
+    Assert.True(isAppliedToStateMachine, "The committed log entry was not applied to the follower's state machine.");
+  }
 
 
 

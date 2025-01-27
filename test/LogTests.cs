@@ -5,7 +5,7 @@ namespace test;
 public class LogTests
 {
 
-  //  when a leader receives a client command the leader sends the log entry in the next appendentries RPC to all nodes
+  // Testing Log #1  when a leader receives a client command the leader sends the log entry in the next appendentries RPC to all nodes
   [Fact]
   public void LeaderSendsLogEntryInNextAppendEntriesRPC()
   {
@@ -32,7 +32,7 @@ public class LogTests
         rpc.Entries.Count == 1 && rpc.Entries[0].Command == "Set key1=value1"));
   }
 
-  // when a leader receives a command from the client, it is appended to its log
+  // Testing Log #2 when a leader receives a command from the client, it is appended to its log
   [Fact]
   public void LeaderAppendsCommandToItsLog()
   {
@@ -57,7 +57,7 @@ public class LogTests
     Assert.Equal(leaderNode.CurrentTerm, logEntry.Term);
   }
 
-  // when a node is new, its log is empty
+  // Testing Log #3 when a node is new, its log is empty
   [Fact]
   public void NewNodeLogIsEmpty()
   {
@@ -72,7 +72,7 @@ public class LogTests
     Assert.Empty(logEntries);
   }
 
-  // when a leader wins an election, it initializes the nextIndex for each follower to the index just after the last one it its log
+  // Testing Log #4 when a leader wins an election, it initializes the nextIndex for each follower to the index just after the last one it its log
   [Fact]
   public void LeaderInitializesNextIndexForEachFollower()
   {
@@ -94,7 +94,7 @@ public class LogTests
     Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
   }
 
-  //leaders maintain an "nextIndex" for each follower that is the index of the next log entry the leader will send to that follower
+  // Testing Log #5 leaders maintain an "nextIndex" for each follower that is the index of the next log entry the leader will send to that follower
   [Fact]
   public void LeaderMaintainsNextIndexForEachFollower()
   {
@@ -118,7 +118,7 @@ public class LogTests
     Assert.Equal(3, leader.GetNextIndexForFollower(follower2.Id));
   }
 
-  // Highest committed index from the leader is included in AppendEntries RPC's
+  // Testing Log #6 Highest committed index from the leader is included in AppendEntries RPC's
   [Fact]
   public void AppendEntriesIncludesHighestCommittedIndex()
   {
@@ -138,7 +138,7 @@ public class LogTests
     );
   }
 
-  //When a follower learns that a log entry is committed, it applies the entry to its local state machine
+  // Testing Log #7 When a follower learns that a log entry is committed, it applies the entry to its local state machine
   [Fact]
   public void FollowerAppliesCommittedEntryToStateMachine()
   {
@@ -166,7 +166,7 @@ public class LogTests
   }
 
 
-  //when the leader has received a majority confirmation of a log, it commits it
+  // Testing Log #8 when the leader has received a majority confirmation of a log, it commits it
   [Fact]
   public void LeaderCommitsLogAfterMajorityAcknowledgment()
   {
@@ -204,7 +204,7 @@ public class LogTests
 
   }
 
-  //the leader commits logs by incrementing its committed log index
+  // Testing Log #9 the leader commits logs by incrementing its committed log index
   [Fact]
   public void LeaderIncrementsCommitIndexWhenLogsAreCommitted()
   {
@@ -243,7 +243,7 @@ public class LogTests
     Assert.Equal(1, leader.CommitIndex);
   }
 
-  // given a follower receives an appendentries with log(s) it will add those entries to its personal log
+  // Testing Log #10 given a follower receives an appendentries with log(s) it will add those entries to its personal log
   [Fact]
   public void FollowerAppendsLogEntriesFromAppendEntriesRPC()
   {
@@ -271,5 +271,7 @@ public class LogTests
     Assert.Equal(incomingLogEntries[0].Command, follower.Log[0].Command); 
     Assert.Equal(incomingLogEntries[1].Command, follower.Log[1].Command); 
   }
+
+  // Testing Log #11
 
 }

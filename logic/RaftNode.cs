@@ -145,10 +145,33 @@ public class RaftNode : IRaftNode
             while (!CancellationTokenSource.Token.IsCancellationRequested)
             {
                 CheckElectionTimeout();
+
+                if (State == NodeState.Leader)
+                {
+                    Console.WriteLine($"Leader {Id} sending heartbeats.");
+                    SendHeartbeat();
+                }
+
                 await Task.Delay(50);
             }
         }, CancellationTokenSource.Token);
     }
+
+    public void PauseElectionLoop()
+    {
+        Console.WriteLine("Pausing election loop...");
+        CancellationTokenSource.Cancel();
+        StopHeartbeatTimer();
+    }
+
+    public void UnpauseElectionLoop()
+    {
+        Console.WriteLine("Unpausing election loop...");
+        CancellationTokenSource = new CancellationTokenSource();
+        RunElectionLoop();
+        StartHeartbeatTimer(100);
+    }
+
 
     public void StartElectionTimer(int timeoutMs)
     {
@@ -197,7 +220,7 @@ public class RaftNode : IRaftNode
         return VotesReceived > totalNodes / 2;
     }
 
-    private System.Timers.Timer HeartbeatTimer { get; set; }
+    private System.Timers.Timer? HeartbeatTimer { get; set; }
 
 
     public Action OnHeartbeat { get; set; }
@@ -207,6 +230,8 @@ public class RaftNode : IRaftNode
     public void StartHeartbeatTimer(int intervalMs)
     {
         if (State != NodeState.Leader) return;
+
+        Console.WriteLine("Starting heartbeat timer...");
         HeartbeatTimer = new System.Timers.Timer(intervalMs);
         HeartbeatTimer.Elapsed += (sender, e) =>
         {
@@ -232,8 +257,10 @@ public class RaftNode : IRaftNode
     {
         if (HeartbeatTimer != null)
         {
+            Console.WriteLine("Stopping heartbeat timer...");
             HeartbeatTimer.Stop();
             HeartbeatTimer.Dispose();
+            HeartbeatTimer = null;
         }
     }
 

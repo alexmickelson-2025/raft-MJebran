@@ -452,7 +452,7 @@ public class LogTests
     Assert.False(clientResponded, "Leader should not have sent a response since the log was not committed.");
   }
 
-  // Testing Log # 19 f a node receives an appendentries with a logs that are too far in the future from your local state, you should reject the appendentries
+  // Testing Log # 19 if a node receives an appendentries with a logs that are too far in the future from your local state, you should reject the appendentries
   [Fact]
   public void RejectAppendEntriesIfLogIsTooFarAhead()
   {
@@ -476,6 +476,29 @@ public class LogTests
     Assert.False(response.Success, "Follower should reject AppendEntries if the log is too far ahead.");
   }
 
+  // Testing Log # 20 if a node receives and appendentries with a term and index that do not match, you will reject the appendentry until you find a matching log 
+  [Fact]
+  public void RejectAppendEntriesIfLogTermOrIndexMismatch()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 3 };
+    follower.Log.Add(new LogEntry(1, "SET key1=value1"));
+    follower.Log.Add(new LogEntry(2, "SET key2=value2"));
+    follower.Log.Add(new LogEntry(3, "SET key3=value3"));
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 4 };
+    var badAppendEntries = new AppendEntriesRPC(
+        leader.Id,
+        leader.CurrentTerm,
+        new List<LogEntry> { new LogEntry(4, "SET keyX=valueX") }, 
+        3 
+    );
+
+    // Act
+    var response = follower.ProcessAppendEntries(badAppendEntries);
+
+    // Assert
+    Assert.False(response.Success, "Follower should reject AppendEntries if term/index do not match existing log.");
+  }
 
 
 

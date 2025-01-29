@@ -452,6 +452,31 @@ public class LogTests
     Assert.False(clientResponded, "Leader should not have sent a response since the log was not committed.");
   }
 
+  // Testing Log # 19 f a node receives an appendentries with a logs that are too far in the future from your local state, you should reject the appendentries
+  [Fact]
+  public void RejectAppendEntriesIfLogIsTooFarAhead()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 2 };
+    follower.Log.Add(new LogEntry(1, "SET key1=value1"));
+    follower.Log.Add(new LogEntry(1, "SET key2=value2"));
+    follower.Log.Add(new LogEntry(2, "SET key3=value3"));
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 5 };
+    var futureAppendEntries = new AppendEntriesRPC(
+        leader.Id,
+        leader.CurrentTerm,
+        new List<LogEntry> { new LogEntry(10, "SET key100=value100") },
+        100
+    );
+
+    // Act
+    var response = follower.ProcessAppendEntries(futureAppendEntries);
+
+    // Assert
+    Assert.False(response.Success, "Follower should reject AppendEntries if the log is too far ahead.");
+  }
+
+
 
 
 }

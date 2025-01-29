@@ -1,7 +1,6 @@
-using System.Runtime.CompilerServices;
 using logic;
-using Xunit.Sdk;
 using NSubstitute;
+namespace test;
 
 
 public class PausingNodes
@@ -29,15 +28,70 @@ public class PausingNodes
     }
 
     // Testing #2 IN_CLASS When no node is a leader with an election loop, then they get paused, other nodes do not get heartbeat for 400 ms, then they get un-paused and heartbeats resume
-    
+    // [Fact]
+    // public async Task NoLeader_PausedAndUnpaused_HeartbeatsResumeAfterPause()
+    // {
+    //     // Arrange
+    //     var node1 = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    //     var node2 = Substitute.For<IRaftNode>();
+    //     var node3 = Substitute.For<IRaftNode>();
 
+    //     node1.OtherNodes = new List<IRaftNode> { node2, node3 };
 
+    //     node1.RunElectionLoop();
+    //     node1.PauseElectionLoop();
+    //     node2.ClearReceivedCalls();
+    //     node3.ClearReceivedCalls();
+    //     await Task.Delay(400);
 
+    //     // Assert:
+    //     node2.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPC>());
+    //     node3.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPC>());
 
+    //     node1.UnpauseElectionLoop();
+    //     await Task.Delay(300);
+    //     node1.SendHeartbeat();
 
+    //     // Assert: 
+    //     node2.Received(1).ProcessAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == node1.CurrentTerm));
+    //     node3.Received(1).ProcessAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == node1.CurrentTerm));
+    // }
 
 
     // Testing #3 IN_CLASS When a follower gets paused, it does not time out to become a candidate
+    [Fact]
+    public async Task FollowerDoesNotTimeoutToBecomeCandidateWhenPaused()
+    {
+        // Arrange
+        var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
+        follower.StartElectionTimer(300);
+        follower.PauseElectionLoop();
+
+        // Act
+        await Task.Delay(400);
+
+        // Assert
+        Assert.Equal(NodeState.Follower, follower.State);
+    }
+
+    //Testing #4 IN_CLASS When a follower gets unpaused, it will eventually become a candidate.
+    // [Fact]
+    // public async Task FollowerBecomesCandidateWhenUnpaused()
+    // {
+    //     // Arrange
+    //     var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
+    //     follower.OtherNodes = new List<IRaftNode>(); 
+    //     follower.StartElectionTimer(300);
+
+    //     follower.PauseElectionLoop();
+    //     await Task.Delay(100);
+    //     follower.UnpauseElectionLoop();
+
+    //     // Act
+    //     await Task.Delay(400); 
+    //     // Assert
+    //     Assert.Equal(NodeState.Candidate, follower.State);
+    // }
 
 
 }

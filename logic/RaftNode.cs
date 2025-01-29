@@ -13,7 +13,7 @@ public class RaftNode : IRaftNode
     public int ElectionTimeout { get; private set; }
     public DateTime LastHeartbeat;
     private MockCluster? _cluster;
-    public CancellationTokenSource CancellationTokenSource { get; set; }
+    public CancellationTokenSource? CancellationTokenSource { get; set; }
     public List<LogEntry> Log { get; private set; } = new List<LogEntry>();
     public int CommitIndex { get; private set; }
     private Dictionary<Guid, int> nextIndex = new Dictionary<Guid, int>();
@@ -80,8 +80,6 @@ public class RaftNode : IRaftNode
         ResetElectionTimer();
     }
 
-
-
     public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
     {
         if (rpc.Term < CurrentTerm)
@@ -138,8 +136,33 @@ public class RaftNode : IRaftNode
         }
     }
 
+    // public void RunElectionLoop()
+    // {
+    //     if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
+    //     {
+    //         CancellationTokenSource = new CancellationTokenSource();
+    //     }
+
+    //     Task.Run(async () =>
+    //     {
+    //         while (!CancellationTokenSource.Token.IsCancellationRequested)
+    //         {
+    //             CheckElectionTimeout();
+
+    //             if (State == NodeState.Leader)
+    //             {
+    //                 Console.WriteLine($"Leader {Id} sending heartbeats.");
+    //                 SendHeartbeat();
+    //             }
+
+    //             await Task.Delay(50);
+    //         }
+    //     }, CancellationTokenSource.Token);
+    // }
     public void RunElectionLoop()
     {
+        CancellationTokenSource ??= new CancellationTokenSource();
+
         Task.Run(async () =>
         {
             while (!CancellationTokenSource.Token.IsCancellationRequested)
@@ -160,18 +183,38 @@ public class RaftNode : IRaftNode
     public void PauseElectionLoop()
     {
         Console.WriteLine("Pausing election loop...");
-        CancellationTokenSource.Cancel();
+        if (CancellationTokenSource != null)
+        {
+            CancellationTokenSource.Cancel();
+            CancellationTokenSource.Dispose();
+            CancellationTokenSource = null;
+        }
         StopHeartbeatTimer();
     }
 
     public void UnpauseElectionLoop()
     {
         Console.WriteLine("Unpausing election loop...");
-        CancellationTokenSource = new CancellationTokenSource();
-        RunElectionLoop();
-        StartHeartbeatTimer(100);
+        if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
+        {
+            CancellationTokenSource = new CancellationTokenSource();
+            RunElectionLoop();
+            StartHeartbeatTimer(100);
+            ResetElectionTimer();
+        }
     }
 
+    // public void UnpauseElectionLoop()
+    // {
+    //     Console.WriteLine("Unpausing election loop...");
+    //     if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
+    //     {
+    //         CancellationTokenSource = new CancellationTokenSource();
+    //     }
+    //     RunElectionLoop();
+    //     StartHeartbeatTimer(100);
+    //     // ResetElectionTimer();
+    // }
 
     public void StartElectionTimer(int timeoutMs)
     {
@@ -180,13 +223,20 @@ public class RaftNode : IRaftNode
 
     public void CheckElectionTimeout()
     {
+        if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        Console.WriteLine($"Checking election timeout for node {Id} in state {State}...");
         if ((DateTime.UtcNow - LastHeartbeat).TotalMilliseconds > ElectionTimeout)
         {
+            Console.WriteLine($"Election timeout reached for node {Id} in state {State}...");
             if (State == NodeState.Follower)
             {
                 StartElection();
             }
-            else if (State == NodeState.Candidate)
+            else if (State == NodeState.Candidate && OtherNodes.Any())
             {
                 CurrentTerm++;
                 VotesReceived = 1;
@@ -222,7 +272,6 @@ public class RaftNode : IRaftNode
 
     private System.Timers.Timer? HeartbeatTimer { get; set; }
 
-
     public Action OnHeartbeat { get; set; }
 
     public List<IRaftNode> OtherNodes { get; set; }
@@ -245,13 +294,13 @@ public class RaftNode : IRaftNode
     {
         if (State != NodeState.Leader) return;
 
+        Console.WriteLine($"Leader {Id} sending heartbeats.");
         foreach (var node in OtherNodes)
         {
             var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry>(), CommitIndex);
             node.HandleAppendEntries(heartbeat);
         }
     }
-
 
     public void StopHeartbeatTimer()
     {

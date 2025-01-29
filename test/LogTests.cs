@@ -313,11 +313,32 @@ public class LogTests
     follower1.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
     follower2.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
     leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
-    leader.ReceiveAppendEntriesAck(follower2.Id, logEntry); 
+    leader.ReceiveAppendEntriesAck(follower2.Id, logEntry);
 
     // Assert
-    Assert.Equal(1, leader.CommitIndex); 
+    Assert.Equal(1, leader.CommitIndex);
   }
+
+  // Testing Log #13 given a leader node, when a log is committed, it applies it to its internal state machine
+  [Fact]
+  public void LeaderAppliesCommittedLogToStateMachine()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    var appliedEntries = new List<LogEntry>();
+    leader.OnApplyLogEntry = logEntry => appliedEntries.Add(logEntry);
+    var logEntry = new LogEntry(1, "SET key=value");
+    leader.Log.Add(logEntry);
+
+    // Act: 
+    leader.SetCommitIndexForTesting(0);
+    leader.ApplyCommittedEntries();
+
+    // Assert
+    Assert.Single(appliedEntries);
+    Assert.Equal("SET key=value", appliedEntries[0].Command);
+  }
+
 
 
 }

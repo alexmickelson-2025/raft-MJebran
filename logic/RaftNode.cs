@@ -349,12 +349,17 @@ public class RaftNode : IRaftNode
 
     public void ApplyCommittedEntries()
     {
-        for (int i = CommitIndex; i < Log.Count; i++)
+        for (int i = 0; i <= CommitIndex && i < Log.Count; i++)
         {
-            if (i < Log.Count)
+            var logEntry = Log[i];
+            if (OnApplyLogEntry != null)
             {
-                var logEntry = Log[i];
-                OnApplyLogEntry?.Invoke(logEntry);
+                Console.WriteLine($"Applying log entry: {logEntry.Command} at index {i}");
+                OnApplyLogEntry(logEntry);
+            }
+            else
+            {
+                Console.WriteLine("OnApplyLogEntry is null, cannot apply log entry!");
             }
         }
     }

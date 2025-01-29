@@ -86,7 +86,27 @@ public class RaftNode : IRaftNode
         {
             return new AppendEntriesResponse { Success = false };
         }
+
+        if (rpc.Entries.Count > 0 && Log.Count > 0)
+        {
+            var lastEntry = Log.Last();
+            var newEntry = rpc.Entries.First();
+
+            if (lastEntry.Term != newEntry.Term)
+            {
+                Console.WriteLine($"Rejected AppendEntries: Log inconsistency (Expected term {lastEntry.Term}, got {newEntry.Term})");
+                return new AppendEntriesResponse { Success = false };
+            }
+        }
+
         HandleAppendEntries(rpc);
+
+        if (rpc.CommitIndex > CommitIndex)
+        {
+            CommitIndex = rpc.CommitIndex;
+            ApplyCommittedEntries();
+        }
+
         return new AppendEntriesResponse { Success = true };
     }
 

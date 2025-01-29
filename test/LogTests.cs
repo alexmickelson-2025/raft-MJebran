@@ -282,7 +282,7 @@ public class LogTests
     follower.Log.Add(new LogEntry(2, "SET key=value"));
 
     var leaderId = Guid.NewGuid();
-    var appendEntriesRpc = new AppendEntriesRPC(leaderId, 3, new List<LogEntry> { new LogEntry(3, "SET new_key=new_value") }, 1);
+    var appendEntriesRpc = new AppendEntriesRPC(leaderId, 2, new List<LogEntry> { new LogEntry(2, "SET new_key=new_value") }, 1);
 
     // Act
     var response = follower.ProcessAppendEntries(appendEntriesRpc);
@@ -337,6 +337,42 @@ public class LogTests
     // Assert
     Assert.Single(appliedEntries);
     Assert.Equal("SET key=value", appliedEntries[0].Command);
+  }
+
+  // Testing Log #14 when a follower receives a valid heartbeat, it increases its commitIndex to match the commit index of the heartbeat,.
+  // 1. reject the heartbeat if the previous log index / term number does not match your log
+  [Fact]
+  public void FollowerUpdatesCommitIndexOnValidHeartbeat()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
+    var leaderCommitIndex = 3;
+    var heartbeat = new AppendEntriesRPC(Guid.NewGuid(), 1, new List<LogEntry>(), leaderCommitIndex);
+
+    // Act
+    var response = follower.ProcessAppendEntries(heartbeat);
+
+    // Assert
+    Assert.True(response.Success);
+    Assert.Equal(leaderCommitIndex, follower.CommitIndex);
+  }
+
+  [Fact]
+  public void FollowerRejectsHeartbeatIfLogDoesNotMatch()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
+    follower.Log.Add(new LogEntry(1, "SET key=value"));
+    var invalidHeartbeat = new AppendEntriesRPC(
+        Guid.NewGuid(), 1, new List<LogEntry> { new LogEntry(2, "SET key=newvalue") }, 3
+    );
+
+    // Act
+    var response = follower.ProcessAppendEntries(invalidHeartbeat);
+
+    // Assert
+    Assert.False(response.Success);
+    Assert.NotEqual(3, follower.CommitIndex);
   }
 
 

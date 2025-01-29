@@ -409,7 +409,7 @@ public class RaftNode : IRaftNode
         if (State == NodeState.Leader)
         {
             Console.WriteLine($"Leader {Id} processing command: {command.Type} {command.Key} = {command.Value}");
-            command.RespondToClient(true, Id);
+            // command.RespondToClient(true, Id);
 
             var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
             Log.Add(logEntry);
@@ -420,6 +420,20 @@ public class RaftNode : IRaftNode
             {
                 follower.HandleAppendEntries(appendEntriesRpc);
             }
+            Task.Run(async () =>
+            {
+                await Task.Delay(500);
+                UpdateCommitIndex();
+                if (CommitIndex >= Log.IndexOf(logEntry))
+                {
+                    Console.WriteLine($"Leader {Id} confirming command execution.");
+                    command.RespondToClient(true, Id);
+                }
+                else
+                {
+                    Console.WriteLine($"Leader {Id} could not commit entry, not responding.");
+                }
+            });
         }
         else if (CurrentLeaderId.HasValue)
         {

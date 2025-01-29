@@ -426,6 +426,32 @@ public class LogTests
     Assert.Equal(1, leader.CommitIndex);
   }
 
+  // Testing Log #18 if a leader cannot commit an entry, it does not send a response to the client
+  [Fact]
+  public async Task LeaderDoesNotRespondIfEntryIsNotCommitted()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2 };
+    var logEntry = new LogEntry(1, "SET key=value");
+    leader.Log.Add(logEntry);
+    bool clientResponded = false;
+    var clientCommand = new ClientCommandData(ClientCommandType.Set, "key", "value", (success, leaderId) =>
+    {
+      clientResponded = success;
+    });
+
+    // Act: 
+    leader.SendCommand(clientCommand);
+    await Task.Delay(600);
+    leader.UpdateCommitIndex();
+
+    // Assert 
+    Assert.False(clientResponded, "Leader should not have sent a response since the log was not committed.");
+  }
+
 
 
 }

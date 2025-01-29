@@ -430,8 +430,11 @@ public class RaftNode : IRaftNode
                 CommitIndex = i;
                 Console.WriteLine($"CommitIndex updated to {CommitIndex}");
             }
+                else
+                {   // easy to read for me
+                    Console.WriteLine($"Entry at index {i} remains uncommitted (Ack count: {ackCount})");
+                }
         }
-
         ApplyCommittedEntries();
     }
 

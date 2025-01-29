@@ -375,6 +375,31 @@ public class LogTests
     Assert.NotEqual(3, follower.CommitIndex);
   }
 
+  //Testing Log # 16 when a leader sends a heartbeat with a log, but does not receive responses from a majority of nodes, the entry is uncommitted
+  [Fact]
+  public void LeaderDoesNotCommitLogWithoutMajorityAcknowledgment()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    var follower3 = Substitute.For<IRaftNode>();
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2, follower3 };
+    var logEntry = new LogEntry(1, "SET key=value");
+    leader.Log.Add(logEntry);
+
+    // Act: 
+    var appendEntriesRpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+    follower1.HandleAppendEntries(appendEntriesRpc);
+    leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
+    leader.UpdateCommitIndex(); 
+
+    // Assert
+    Assert.Equal(0, leader.CommitIndex);
+    follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == leader.CurrentTerm));
+  }
+
 
 
 }

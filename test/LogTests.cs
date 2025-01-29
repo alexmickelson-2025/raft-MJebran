@@ -200,7 +200,7 @@ public class LogTests
     leader.UpdateCommitIndex();
 
     // Assert
-    Assert.Equal(0, leader.CommitIndex);
+    Assert.Equal(1, leader.CommitIndex);
 
   }
 
@@ -240,7 +240,7 @@ public class LogTests
     leader.UpdateCommitIndex();
 
     // Assert
-    Assert.Equal(1, leader.CommitIndex);
+    Assert.Equal(2, leader.CommitIndex);
   }
 
   // Testing Log #10 given a follower receives an appendentries with log(s) it will add those entries to its personal log
@@ -291,4 +291,33 @@ public class LogTests
     Assert.Equal(follower.CurrentTerm, appendEntriesRpc.Term);
     Assert.Equal(follower.Log.Count - 1, appendEntriesRpc.CommitIndex);
   }
+
+  // Testing Log #12 when a leader receives a majority responses from the clients after a log replication heartbeat, the leader sends a confirmation response to the client
+  [Fact]
+  public void LeaderSendsConfirmationAfterMajorityAcknowledgment()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    var follower3 = Substitute.For<IRaftNode>();
+
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2, follower3 };
+
+    var logEntry = new LogEntry(1, "SET key=value");
+    leader.Log.Add(logEntry);
+
+    // Act: 
+    leader.SendHeartbeat();
+    follower1.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
+    follower2.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
+    leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
+    leader.ReceiveAppendEntriesAck(follower2.Id, logEntry); 
+
+    // Assert
+    Assert.Equal(1, leader.CommitIndex); 
+  }
+
+
 }

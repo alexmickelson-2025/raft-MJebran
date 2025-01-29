@@ -361,7 +361,7 @@ public class RaftNode : IRaftNode
 
     public void ReceiveAppendEntriesAck(Guid followerId, LogEntry logEntry)
     {
-        int logIndex = Log.IndexOf(logEntry);
+        int logIndex = Log.FindIndex(entry => entry.Command == logEntry.Command && entry.Term == logEntry.Term);
 
         if (logIndex == -1)
         {
@@ -379,8 +379,20 @@ public class RaftNode : IRaftNode
         }
 
         Console.WriteLine($"Acknowledgment for log entry {logIndex}: {acknowledgmentCounts[logIndex]}");
+
+        int majority = (OtherNodes.Count + 1) / 2;
+        if (acknowledgmentCounts[logIndex] >= majority)
+        {
+            CommitIndex = logIndex + 1;
+            Console.WriteLine($"CommitIndex updated to {CommitIndex}");
+            SendConfirmationToClient(logEntry);
+        }
     }
 
+    private void SendConfirmationToClient(LogEntry logEntry)
+    {
+        Console.WriteLine($"Leader {Id} confirming log replication: {logEntry.Command}");
+    }
 
     public void UpdateCommitIndex()
     {

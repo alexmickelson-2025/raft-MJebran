@@ -268,10 +268,27 @@ public class LogTests
 
     // Assert
     Assert.Equal(2, follower.Log.Count);
-    Assert.Equal(incomingLogEntries[0].Command, follower.Log[0].Command); 
-    Assert.Equal(incomingLogEntries[1].Command, follower.Log[1].Command); 
+    Assert.Equal(incomingLogEntries[0].Command, follower.Log[0].Command);
+    Assert.Equal(incomingLogEntries[1].Command, follower.Log[1].Command);
   }
 
-  // Testing Log #11
+  // Testing Log #11  a followers response to an appendentries includes the followers term number and log entry index
+  [Fact]
+  public void FollowerResponseToAppendEntriesIncludesTermAndLogIndex()
+  {
+    // Arrange
+    var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 2 };
 
+    follower.Log.Add(new LogEntry(2, "SET key=value"));
+
+    var leaderId = Guid.NewGuid();
+    var appendEntriesRpc = new AppendEntriesRPC(leaderId, 3, new List<LogEntry> { new LogEntry(3, "SET new_key=new_value") }, 1);
+
+    // Act
+    var response = follower.ProcessAppendEntries(appendEntriesRpc);
+
+    // Assert
+    Assert.Equal(follower.CurrentTerm, appendEntriesRpc.Term);
+    Assert.Equal(follower.Log.Count - 1, appendEntriesRpc.CommitIndex);
+  }
 }

@@ -156,29 +156,6 @@ public class RaftNode : IRaftNode
         }
     }
 
-    // public void RunElectionLoop()
-    // {
-    //     if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
-    //     {
-    //         CancellationTokenSource = new CancellationTokenSource();
-    //     }
-
-    //     Task.Run(async () =>
-    //     {
-    //         while (!CancellationTokenSource.Token.IsCancellationRequested)
-    //         {
-    //             CheckElectionTimeout();
-
-    //             if (State == NodeState.Leader)
-    //             {
-    //                 Console.WriteLine($"Leader {Id} sending heartbeats.");
-    //                 SendHeartbeat();
-    //             }
-
-    //             await Task.Delay(50);
-    //         }
-    //     }, CancellationTokenSource.Token);
-    // }
     public void RunElectionLoop()
     {
         CancellationTokenSource ??= new CancellationTokenSource();
@@ -223,18 +200,6 @@ public class RaftNode : IRaftNode
             ResetElectionTimer();
         }
     }
-
-    // public void UnpauseElectionLoop()
-    // {
-    //     Console.WriteLine("Unpausing election loop...");
-    //     if (CancellationTokenSource == null || CancellationTokenSource.Token.IsCancellationRequested)
-    //     {
-    //         CancellationTokenSource = new CancellationTokenSource();
-    //     }
-    //     RunElectionLoop();
-    //     StartHeartbeatTimer(100);
-    //     // ResetElectionTimer();
-    // }
 
     public void StartElectionTimer(int timeoutMs)
     {
@@ -317,7 +282,8 @@ public class RaftNode : IRaftNode
         Console.WriteLine($"Leader {Id} sending heartbeats.");
         foreach (var node in OtherNodes)
         {
-            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry>(), CommitIndex);
+            var uncommittedEntries = Log.Skip(CommitIndex).ToList();
+            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, uncommittedEntries, CommitIndex);
             node.HandleAppendEntries(heartbeat);
         }
     }
@@ -430,10 +396,10 @@ public class RaftNode : IRaftNode
                 CommitIndex = i;
                 Console.WriteLine($"CommitIndex updated to {CommitIndex}");
             }
-                else
-                {   // easy to read for me
-                    Console.WriteLine($"Entry at index {i} remains uncommitted (Ack count: {ackCount})");
-                }
+            else
+            {   // easy to read for me
+                Console.WriteLine($"Entry at index {i} remains uncommitted (Ack count: {ackCount})");
+            }
         }
         ApplyCommittedEntries();
     }

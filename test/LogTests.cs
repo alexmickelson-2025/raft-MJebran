@@ -393,11 +393,37 @@ public class LogTests
     var appendEntriesRpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
     follower1.HandleAppendEntries(appendEntriesRpc);
     leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
-    leader.UpdateCommitIndex(); 
+    leader.UpdateCommitIndex();
 
     // Assert
     Assert.Equal(0, leader.CommitIndex);
     follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == leader.CurrentTerm));
+  }
+
+  // Testing Log #17 if a leader does not response from a follower, the leader continues to send the log entries in subsequent heartbeats  
+  [Fact]
+  public async Task LeaderRetriesLogEntriesIfFollowerDoesNotRespond()
+  {
+    // Arrange
+    var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 1 };
+    var follower1 = Substitute.For<IRaftNode>();
+    var follower2 = Substitute.For<IRaftNode>();
+    leader.OtherNodes = new List<IRaftNode> { follower1, follower2 };
+    var logEntry = new LogEntry(2, "SET key=value");
+    leader.Log.Add(logEntry);
+    var appendEntriesRpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+
+    // Act:
+    leader.SendHeartbeat();
+    await Task.Delay(100);
+    follower1.HandleAppendEntries(appendEntriesRpc);
+    leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
+    leader.SendHeartbeat();
+    await Task.Delay(100);
+
+    // Assert
+    follower2.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == leader.CurrentTerm && rpc.Entries.Count > 0));
+    Assert.Equal(1, leader.CommitIndex);
   }
 
 

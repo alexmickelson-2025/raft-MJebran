@@ -1,16 +1,24 @@
 using logic;
 
+
 public class SimulationNode : IRaftNode
 {
-    public RaftNode InnerNode;
+    public RaftNode InnerNode { get; private set; }
     public string Message { get; set; } = "";
     public static int NetworkRequestDelay { get; set; } = 1000;
     public static int NetworkResponseDelay { get; set; } = 0;
     private bool simulationRunning = false;
+    public string ResponseMessage { get; set; }
+
+    // Add properties for UI command input
+    public string CommandKey { get; set; } = string.Empty;
+    public string CommandValue { get; set; } = string.Empty;
+    public string CommandResponse { get; set; } = string.Empty;
 
     public SimulationNode(RaftNode node)
     {
         this.InnerNode = node;
+        this.ResponseMessage = string.Empty;
     }
 
     public Guid Id => InnerNode.Id;
@@ -26,7 +34,6 @@ public class SimulationNode : IRaftNode
         get => ((IRaftNode)InnerNode).CurrentLeaderId;
         set => ((IRaftNode)InnerNode).CurrentLeaderId = value;
     }
-
 
     public int CurrentTerm
     {

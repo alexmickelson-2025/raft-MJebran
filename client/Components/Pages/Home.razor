@@ -38,6 +38,8 @@ else
                 <h5>Node @node.Id</h5>
                 <p>Status: <span>@node.State</span></p>
                 <p>Current Term: <span>@node.CurrentTerm</span></p>
+                <p>Commit Index: <span>@node.InnerNode.CommitIndex</span></p>
+
                 <p>Leader:
                     <span>
                         @if (node.State == NodeState.Candidate)
@@ -63,16 +65,49 @@ else
                 </div>
                 </p>
                 <p>Message: <span>@node.Message</span></p>
+
+                <!-- Log Entries -->
+                <h6>Log Entries</h6>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Term</th>
+                            <th>Command</th>
+                            <th>Committed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < node.InnerNode.Log.Count; i++)
+                        {
+                            var entry = node.InnerNode.Log[i];
+                            <tr>
+                                <td>@i</td>
+                                <td>@entry.Term</td>
+                                <td>@entry.Command</td>
+                                @* https://www.i2symbol.com/symbols/check *@
+                                <td>@(i < node.InnerNode.CommitIndex ? "✅" : "❌")</td> 
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Send Set Command -->
+                <h6>Send Command</h6>
+                <input type="text" placeholder="Key" @bind="node.CommandKey" class="form-control mb-1" />
+                <input type="text" placeholder="Value" @bind="node.CommandValue" class="form-control mb-1" />
+                <button class="btn btn-success" @onclick="() => SendSetCommand(node)">Send Set Command</button>
+                
+                <p><strong>Response:</strong> @node.CommandResponse</p>
+
                 <div>
                     <button class="btn btn-outline-danger" @onclick="@(() => node.StopSimulationLoop())">Stop Node</button>
-                    <button class="btn btn-outline-primary" @onclick="@(() => node.StartSimulationLoop())">Start
-                        Node</button>
+                    <button class="btn btn-outline-primary" @onclick="@(() => node.StartSimulationLoop())">Start Node</button>
                 </div>
             </div>
         </div>
     }
 </div>
-
 
 @code {
     private List<SimulationNode> nodes = new();
@@ -125,5 +160,26 @@ else
 
         isRunning = false;
         StateHasChanged();
+    }
+
+    private void SendSetCommand(SimulationNode node)
+    {
+        if (string.IsNullOrWhiteSpace(node.CommandKey) || string.IsNullOrWhiteSpace(node.CommandValue))
+        {
+            node.CommandResponse = "Error: Key and value cannot be empty.";
+            return;
+        }
+
+        var command = new ClientCommandData(
+            ClientCommandType.Set,
+            node.CommandKey,
+            node.CommandValue,
+            (success, leaderId) =>
+            {
+                node.CommandResponse = success ? "Success: Command accepted" : $"Failed: Leader is {leaderId}";
+                StateHasChanged();
+            });
+
+        node.InnerNode.SendCommand(command);
     }
 }

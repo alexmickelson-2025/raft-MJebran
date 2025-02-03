@@ -1,4 +1,6 @@
-  services:
+version: '3.8'
+
+services:
   node1:
     build:
       context: .
@@ -13,6 +15,7 @@
       timeout: 3s
       retries: 3
       start_period: 3s
+
   node2:
     build:
       context: .
@@ -27,6 +30,7 @@
       timeout: 3s
       retries: 3
       start_period: 3s
+
   node3:
     build:
       context: .
@@ -47,7 +51,7 @@
       context: .
       dockerfile: dev.Dockerfile
     working_dir: /app
-    user: 1000:100
+    user: "1000:100"
     ports:
       - "5000:8080"
     volumes:

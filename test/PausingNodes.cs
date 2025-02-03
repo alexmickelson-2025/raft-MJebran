@@ -22,8 +22,8 @@ public class PausingNodes
         await Task.Delay(400);
 
         // Assert: 
-        follower1.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPC>());
-        follower2.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPC>());
+        follower1.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPCDTO>());
+        follower2.DidNotReceive().ProcessAppendEntries(Arg.Any<AppendEntriesRPCDTO>());
 
     }
 

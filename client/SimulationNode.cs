@@ -21,13 +21,19 @@ public class SimulationNode : IRaftNode
         this.ResponseMessage = string.Empty;
     }
 
-    public Guid Id => InnerNode.Id;
+    public Guid Id 
+    {
+        get => InnerNode.Id;
+        set => InnerNode.Id = value;
+    }
 
     public NodeState State
     {
         get => ((IRaftNode)InnerNode).State;
         set => ((IRaftNode)InnerNode).State = value;
     }
+
+    
 
     public Guid? CurrentLeaderId
     {
@@ -68,12 +74,12 @@ public class SimulationNode : IRaftNode
         ((IRaftNode)InnerNode).CheckElectionTimeout();
     }
 
-    public void HandleAppendEntries(AppendEntriesRPC appendEntries)
+    public void HandleAppendEntries(AppendEntriesRPCDTO appendEntries)
     {
         ((IRaftNode)InnerNode).HandleAppendEntries(appendEntries);
     }
 
-    public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPC rpc)
+    public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPCDTO rpc)
     {
         return ((IRaftNode)InnerNode).HandleRequestForVote(rpc);
     }
@@ -83,7 +89,7 @@ public class SimulationNode : IRaftNode
         return ((IRaftNode)InnerNode).HasMajorityVotes(totalNodes);
     }
 
-    public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
+    public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPCDTO rpc)
     {
         return ((IRaftNode)InnerNode).ProcessAppendEntries(rpc);
     }
@@ -118,7 +124,7 @@ public class SimulationNode : IRaftNode
         ((IRaftNode)InnerNode).StopHeartbeatTimer();
     }
 
-    public async Task RequestVote(RequestForVoteRPC request)
+    public async Task RequestVote(RequestForVoteRPCDTO request)
     {
         if (!simulationRunning) return;
 
@@ -127,7 +133,7 @@ public class SimulationNode : IRaftNode
         InnerNode.HandleRequestForVote(request);
     }
 
-    public async Task RespondAppendEntries(AppendEntriesRPC request)
+    public async Task RespondAppendEntries(AppendEntriesRPCDTO request)
     {
         if (!simulationRunning) return;
 

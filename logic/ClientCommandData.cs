@@ -1,6 +1,8 @@
+namespace logic;
+
 public enum ClientCommandType{ Set, Get}
 
-public class ClientCommandData
+public record ClientCommandData
 {
     public ClientCommandType Type { get; }
     public string Key { get; }

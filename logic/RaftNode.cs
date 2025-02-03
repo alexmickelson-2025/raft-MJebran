@@ -5,7 +5,7 @@ public enum NodeState { Follower, Candidate, Leader }
 
 public class RaftNode : IRaftNode
 {
-    public Guid Id { get; private set; }
+    public Guid Id { get; set; }
     public NodeState State { get; set; }
     public Guid? CurrentLeaderId { get; set; }
     public int CurrentTerm { get; set; }
@@ -55,7 +55,7 @@ public class RaftNode : IRaftNode
 
     public bool HasVotedFor(Guid candidateId) => VotedFor == candidateId;
 
-    public void HandleAppendEntries(AppendEntriesRPC appendEntries)
+    public void HandleAppendEntries(AppendEntriesRPCDTO appendEntries)
     {
         if (appendEntries.Term > CurrentTerm)
         {
@@ -80,7 +80,7 @@ public class RaftNode : IRaftNode
         ResetElectionTimer();
     }
 
-    public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPC rpc)
+    public AppendEntriesResponse ProcessAppendEntries(AppendEntriesRPCDTO rpc)
     {
         if (rpc.Term < CurrentTerm)
         {
@@ -110,7 +110,7 @@ public class RaftNode : IRaftNode
         return new AppendEntriesResponse { Success = true };
     }
 
-    public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPC rpc)
+    public RequestForVoteResponse HandleRequestForVote(RequestForVoteRPCDTO rpc)
     {
         if (rpc.Term < CurrentTerm)
         {
@@ -142,7 +142,7 @@ public class RaftNode : IRaftNode
         VotesReceived = 1;
         foreach (var node in OtherNodes)
         {
-            var voteRequest = new RequestForVoteRPC(CurrentTerm, Id);
+            var voteRequest = new RequestForVoteRPCDTO(CurrentTerm, Id);
             var voteResponse = node.HandleRequestForVote(voteRequest);
             if (voteResponse.VoteGranted)
             {
@@ -227,7 +227,7 @@ public class RaftNode : IRaftNode
                 VotesReceived = 1;
                 foreach (var node in OtherNodes)
                 {
-                    var voteRequest = new RequestForVoteRPC(CurrentTerm, Id);
+                    var voteRequest = new RequestForVoteRPCDTO(CurrentTerm, Id);
                     var voteResponse = node.HandleRequestForVote(voteRequest);
                     if (voteResponse.VoteGranted)
                     {
@@ -283,7 +283,7 @@ public class RaftNode : IRaftNode
         foreach (var node in OtherNodes)
         {
             var uncommittedEntries = Log.Skip(CommitIndex).ToList();
-            var heartbeat = new AppendEntriesRPC(Id, CurrentTerm, uncommittedEntries, CommitIndex);
+            var heartbeat = new AppendEntriesRPCDTO(Id, CurrentTerm, uncommittedEntries, CommitIndex);
             node.HandleAppendEntries(heartbeat);
         }
     }
@@ -414,7 +414,7 @@ public class RaftNode : IRaftNode
             var logEntry = new LogEntry(CurrentTerm, $"{command.Type} {command.Key}={command.Value}");
             Log.Add(logEntry);
 
-            var appendEntriesRpc = new AppendEntriesRPC(Id, CurrentTerm, new List<LogEntry> { logEntry }, CommitIndex);
+            var appendEntriesRpc = new AppendEntriesRPCDTO(Id, CurrentTerm, new List<LogEntry> { logEntry }, CommitIndex);
 
             foreach (var follower in OtherNodes ?? new List<IRaftNode>())
             {

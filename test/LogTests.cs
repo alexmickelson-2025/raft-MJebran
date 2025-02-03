@@ -25,10 +25,10 @@ public class LogTests
     leader.SendCommand(command);
 
     // Assert
-    follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc =>
+    follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPCDTO>(rpc =>
         rpc.Entries.Count == 1 && rpc.Entries[0].Command == "Set key1=value1"));
 
-    follower2.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc =>
+    follower2.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPCDTO>(rpc =>
         rpc.Entries.Count == 1 && rpc.Entries[0].Command == "Set key1=value1"));
   }
 
@@ -134,7 +134,7 @@ public class LogTests
 
     // Assert
     followerMock.Received().HandleAppendEntries(
-        Arg.Is<AppendEntriesRPC>(rpc => rpc.CommitIndex == leader.CommitIndex)
+        Arg.Is<AppendEntriesRPCDTO>(rpc => rpc.CommitIndex == leader.CommitIndex)
     );
   }
 
@@ -181,7 +181,7 @@ public class LogTests
     var logEntry = new LogEntry(1, "Set key1=value1");
     leader.Log.Add(logEntry);
 
-    var rpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+    var rpc = new AppendEntriesRPCDTO(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
 
     follower1.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
     follower2.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
@@ -221,7 +221,7 @@ public class LogTests
     leader.Log.Add(logEntry1);
     leader.Log.Add(logEntry2);
 
-    var rpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, leader.Log, leader.CommitIndex);
+    var rpc = new AppendEntriesRPCDTO(leader.Id, leader.CurrentTerm, leader.Log, leader.CommitIndex);
     follower1.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
     follower2.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = true });
     follower3.ProcessAppendEntries(rpc).Returns(new AppendEntriesResponse { Success = false });
@@ -256,7 +256,7 @@ public class LogTests
         new LogEntry(1, "Set key2=value2")
     };
 
-    var appendEntriesRpc = new AppendEntriesRPC(
+    var appendEntriesRpc = new AppendEntriesRPCDTO(
         leaderId: Guid.NewGuid(),
         term: 1,
         entries: incomingLogEntries,
@@ -282,7 +282,7 @@ public class LogTests
     follower.Log.Add(new LogEntry(2, "SET key=value"));
 
     var leaderId = Guid.NewGuid();
-    var appendEntriesRpc = new AppendEntriesRPC(leaderId, 2, new List<LogEntry> { new LogEntry(2, "SET new_key=new_value") }, 1);
+    var appendEntriesRpc = new AppendEntriesRPCDTO(leaderId, 2, new List<LogEntry> { new LogEntry(2, "SET new_key=new_value") }, 1);
 
     // Act
     var response = follower.ProcessAppendEntries(appendEntriesRpc);
@@ -310,8 +310,8 @@ public class LogTests
 
     // Act: 
     leader.SendHeartbeat();
-    follower1.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
-    follower2.HandleAppendEntries(Arg.Any<AppendEntriesRPC>());
+    follower1.HandleAppendEntries(Arg.Any<AppendEntriesRPCDTO>());
+    follower2.HandleAppendEntries(Arg.Any<AppendEntriesRPCDTO>());
     leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
     leader.ReceiveAppendEntriesAck(follower2.Id, logEntry);
 
@@ -347,7 +347,7 @@ public class LogTests
     // Arrange
     var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
     var leaderCommitIndex = 3;
-    var heartbeat = new AppendEntriesRPC(Guid.NewGuid(), 1, new List<LogEntry>(), leaderCommitIndex);
+    var heartbeat = new AppendEntriesRPCDTO(Guid.NewGuid(), 1, new List<LogEntry>(), leaderCommitIndex);
 
     // Act
     var response = follower.ProcessAppendEntries(heartbeat);
@@ -363,7 +363,7 @@ public class LogTests
     // Arrange
     var follower = new RaftNode { State = NodeState.Follower, CurrentTerm = 1 };
     follower.Log.Add(new LogEntry(1, "SET key=value"));
-    var invalidHeartbeat = new AppendEntriesRPC(
+    var invalidHeartbeat = new AppendEntriesRPCDTO(
         Guid.NewGuid(), 1, new List<LogEntry> { new LogEntry(2, "SET key=newvalue") }, 3
     );
 
@@ -390,14 +390,14 @@ public class LogTests
     leader.Log.Add(logEntry);
 
     // Act: 
-    var appendEntriesRpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+    var appendEntriesRpc = new AppendEntriesRPCDTO(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
     follower1.HandleAppendEntries(appendEntriesRpc);
     leader.ReceiveAppendEntriesAck(follower1.Id, logEntry);
     leader.UpdateCommitIndex();
 
     // Assert
     Assert.Equal(0, leader.CommitIndex);
-    follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == leader.CurrentTerm));
+    follower1.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPCDTO>(rpc => rpc.Term == leader.CurrentTerm));
   }
 
   // Testing Log #17 if a leader does not response from a follower, the leader continues to send the log entries in subsequent heartbeats  
@@ -411,7 +411,7 @@ public class LogTests
     leader.OtherNodes = new List<IRaftNode> { follower1, follower2 };
     var logEntry = new LogEntry(2, "SET key=value");
     leader.Log.Add(logEntry);
-    var appendEntriesRpc = new AppendEntriesRPC(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
+    var appendEntriesRpc = new AppendEntriesRPCDTO(leader.Id, leader.CurrentTerm, new List<LogEntry> { logEntry }, leader.CommitIndex);
 
     // Act:
     leader.SendHeartbeat();
@@ -422,7 +422,7 @@ public class LogTests
     await Task.Delay(100);
 
     // Assert
-    follower2.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPC>(rpc => rpc.Term == leader.CurrentTerm && rpc.Entries.Count > 0));
+    follower2.Received(1).HandleAppendEntries(Arg.Is<AppendEntriesRPCDTO>(rpc => rpc.Term == leader.CurrentTerm && rpc.Entries.Count > 0));
     Assert.Equal(1, leader.CommitIndex);
   }
 
@@ -462,7 +462,7 @@ public class LogTests
     follower.Log.Add(new LogEntry(1, "SET key2=value2"));
     follower.Log.Add(new LogEntry(2, "SET key3=value3"));
     var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 5 };
-    var futureAppendEntries = new AppendEntriesRPC(
+    var futureAppendEntries = new AppendEntriesRPCDTO(
         leader.Id,
         leader.CurrentTerm,
         new List<LogEntry> { new LogEntry(10, "SET key100=value100") },
@@ -486,11 +486,11 @@ public class LogTests
     follower.Log.Add(new LogEntry(2, "SET key2=value2"));
     follower.Log.Add(new LogEntry(3, "SET key3=value3"));
     var leader = new RaftNode { State = NodeState.Leader, CurrentTerm = 4 };
-    var badAppendEntries = new AppendEntriesRPC(
+    var badAppendEntries = new AppendEntriesRPCDTO(
         leader.Id,
         leader.CurrentTerm,
-        new List<LogEntry> { new LogEntry(4, "SET keyX=valueX") }, 
-        3 
+        new List<LogEntry> { new LogEntry(4, "SET keyX=valueX") },
+        3
     );
 
     // Act

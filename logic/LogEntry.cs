@@ -1,3 +1,5 @@
+namespace logic;
+
 public class LogEntry
 {
     public int Term { get; set; }

@@ -1,9 +1,10 @@
-public class RequestForVoteRPC
+namespace logic;
+public record RequestForVoteRPCDTO
 {
     public int Term { get; private set; }
     public Guid CandidateId { get; private set; }
 
-    public RequestForVoteRPC(int term, Guid candidateId)
+    public RequestForVoteRPCDTO(int term, Guid candidateId)
     {
         Term = term;
         CandidateId = candidateId;

@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "client", "client\client.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "api", "api\api.csproj", "{CABE99CD-75BF-4A70-B704-76266B84BC65}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "raftDockerClient", "raftDockerClient\raftDockerClient.csproj", "{48B9F133-152B-4558-9EA0-261F8B4CDE9B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{CABE99CD-75BF-4A70-B704-76266B84BC65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CABE99CD-75BF-4A70-B704-76266B84BC65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CABE99CD-75BF-4A70-B704-76266B84BC65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48B9F133-152B-4558-9EA0-261F8B4CDE9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48B9F133-152B-4558-9EA0-261F8B4CDE9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48B9F133-152B-4558-9EA0-261F8B4CDE9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48B9F133-152B-4558-9EA0-261F8B4CDE9B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

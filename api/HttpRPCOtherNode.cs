@@ -1,29 +1,18 @@
-
-
-namespace logic;
+using logic;
 
 public class HttpRpcOtherNode : IRaftNode
 {
   public int Id { get; }
   public string Url { get; }
-
-    Guid IRaftNode.Id {get; set;}
-
-    NodeState IRaftNode.State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    Guid? IRaftNode.CurrentLeaderId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    int IRaftNode.CurrentTerm { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    List<IRaftNode> IRaftNode.OtherNodes { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    Guid? IRaftNode.VotedFor { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-    private HttpClient client = new();
-
+  private HttpClient client = new();
+ 
   public HttpRpcOtherNode(int id, string url)
   {
     Id = id;
     Url = url;
   }
-
-  public async Task RequestAppendEntries(AppendEntriesRPCDTO request)
+ 
+  public async Task RequestAppendEntries(AppendEntriesData request)
   {
     try
     {
@@ -34,8 +23,8 @@ public class HttpRpcOtherNode : IRaftNode
       Console.WriteLine($"node {Url} is down");
     }
   }
-
-  public async Task RequestVote(RequestForVoteRPCDTO request)
+ 
+  public async Task RequestVote(VoteRequestData request)
   {
     try
     {
@@ -46,8 +35,8 @@ public class HttpRpcOtherNode : IRaftNode
       Console.WriteLine($"node {Url} is down");
     }
   }
-
-  public async Task RespondAppendEntries(AppendEntriesResponse response)
+ 
+  public async Task RespondAppendEntries(RespondEntriesData response)
   {
     try
     {
@@ -58,8 +47,8 @@ public class HttpRpcOtherNode : IRaftNode
       Console.WriteLine($"node {Url} is down");
     }
   }
-
-  public async Task ResponseVote(RequestForVoteResponse response)
+ 
+  public async Task ResponseVote(VoteResponseData response)
   {
     try
     {
@@ -70,74 +59,9 @@ public class HttpRpcOtherNode : IRaftNode
       Console.WriteLine($"node {Url} is down");
     }
   }
-
+ 
   public async Task SendCommand(ClientCommandData data)
   {
     await client.PostAsJsonAsync(Url + "/request/command", data);
   }
-
-    void IRaftNode.BecomeCandidate()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.BecomeLeader()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.HandleAppendEntries(AppendEntriesRPCDTO appendEntries)
-    {
-        throw new NotImplementedException();
-    }
-
-    AppendEntriesResponse IRaftNode.ProcessAppendEntries(AppendEntriesRPCDTO rpc)
-    {
-        throw new NotImplementedException();
-    }
-
-    RequestForVoteResponse IRaftNode.HandleRequestForVote(RequestForVoteRPCDTO rpc)
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.ResetElectionTimer()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.StartElection()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.StartHeartbeatTimer(int intervalMs)
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.StopHeartbeatTimer()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.StartElectionTimer(int timeoutMs)
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.CheckElectionTimeout()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IRaftNode.ReceiveVote()
-    {
-        throw new NotImplementedException();
-    }
-
-    bool IRaftNode.HasMajorityVotes(int totalNodes)
-    {
-        throw new NotImplementedException();
-    }
 }

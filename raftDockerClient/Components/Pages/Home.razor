@@ -8,7 +8,10 @@
 Welcome to your new app.
 
 
-
+@foreach (var url in Urls)
+{
+    <p>@url</p>
+}
 @code {
     HttpClient http = new HttpClient();
     string[] Urls = Environment.GetEnvironmentVariable("NODE_URLS").Split(",");

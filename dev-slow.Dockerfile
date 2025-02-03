@@ -9,7 +9,6 @@ RUN groupadd -g 1000 developer && \
     mkdir -p /home/developer && \
     chown -R developer:developer /home/developer
  
-USER developer:developer
  
 WORKDIR /app
  

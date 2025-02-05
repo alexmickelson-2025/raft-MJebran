@@ -37,7 +37,7 @@ Welcome to your new app.
                     Console.WriteLine($"Error fetching data from {url}: {ex.Message}");
                 }
             }
-            StateHasChanged();
+            InvokeAsync(StateHasChanged);
         }, null, 0, 5000);
         
     }

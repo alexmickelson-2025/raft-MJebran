@@ -14,4 +14,4 @@ WORKDIR /app
  
 COPY . /app
  
-CMD dotnet run --project raftDockerClient
+CMD dotnet run --project api

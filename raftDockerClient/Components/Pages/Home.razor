@@ -4,9 +4,8 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Raft Simulation through Docker Client!</h1>
 
-Welcome to your new app.
 
 
 @foreach (var url in Urls)
@@ -26,6 +25,7 @@ Welcome to your new app.
             {
                 try
                 {
+                    string fullurl = $"{url}/nodeData";
                     var nodeData = await http.GetFromJsonAsync<NodeData>($"{url}/nodeData");
                     if (nodeData != null)
                     {
@@ -39,7 +39,6 @@ Welcome to your new app.
             }
             InvokeAsync(StateHasChanged);
         }, null, 0, 5000);
-        
     }
 }
 

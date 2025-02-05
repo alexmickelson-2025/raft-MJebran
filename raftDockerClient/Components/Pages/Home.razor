@@ -1,5 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using System.Collections.Concurrent; 
 
 <PageTitle>Home</PageTitle>
 
@@ -14,8 +15,31 @@ Welcome to your new app.
 }
 @code {
     HttpClient http = new HttpClient();
+    Timer timer;
     string[] Urls = Environment.GetEnvironmentVariable("NODE_URLS").Split(",");
-    @* ConcurrentDictionary<string, NodeData> data new(); *@
+    ConcurrentDictionary<string, NodeData> data = new();
+    protected override async Task OnInitializedAsync()
+    {
+        timer = new Timer(async (state) =>
+        {
+            foreach (var url in Urls)
+            {
+                try
+                {
+                    var nodeData = await http.GetFromJsonAsync<NodeData>($"{url}/nodeData");
+                    if (nodeData != null)
+                    {
+                        data[url] = nodeData;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching data from {url}: {ex.Message}");
+                }
+            }
+            StateHasChanged();
+        }, null, 0, 5000);
+        
+    }
 }
 
-    @* using System.Collections.Concurrent; *@

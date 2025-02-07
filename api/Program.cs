@@ -129,7 +129,13 @@ app.MapPost("/startSimulation", async (HttpContext context) =>
     }
 });
 
+app.MapGet("/pause", () => {
+  node.PauseElectionLoop();
+});
 
+app.MapGet("/unpause", () => {
+  node.UnpauseElectionLoop();
+});
 
 
 

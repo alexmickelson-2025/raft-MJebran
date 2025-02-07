@@ -216,12 +216,12 @@ else
 
     private async Task StartNode(string nodeUrl)
     {
-        await http.PostAsync($"{nodeUrl}/start", null);
+        await http.GetAsync($"{nodeUrl}/unpause");
     }
 
     private async Task StopNode(string nodeUrl)
     {
-        await http.PostAsync($"{nodeUrl}/stop", null);
+        await http.GetAsync($"{nodeUrl}/pause");
     }
 
     private int GetTimeoutPercentage(NodeData node)

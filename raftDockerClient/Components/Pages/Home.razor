@@ -5,46 +5,131 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Raft Simulation through Docker Client!</h1>
+<h1>Raft Web Client - Node Simulation</h1>
 
-@foreach (var url in Urls)
+@if (!isRunning)
 {
-    <h3>Node URL: @url</h3>
-    @if (data.TryGetValue(url, out var nodeData))
-    {
-        <ul>
-            <li><strong>ID:</strong> @nodeData.Id</li>
-            <li><strong>State:</strong> @nodeData.State</li>
-            <li><strong>Election Timeout:</strong> @nodeData.ElectionTimeout</li>
-            <li><strong>Current Term:</strong> @nodeData.CurrentTerm</li>
-            <li><strong>Current Leader ID:</strong> @nodeData.CurrentLeaderId</li>
-            <li><strong>Committed Entry Index:</strong> @nodeData.CommittedEntryIndex</li>
-            <li><strong>Log Entries:</strong></li>
-            <ul>
-                @foreach (var logEntry in nodeData.Log)
-                {
-                    <li>@logEntry</li>
-                }
-            </ul>
-        </ul>
-    }
-    else
-    {
-        <p>Loading data from @url...</p>
-    }
+    <button class="btn btn-primary" @onclick="StartSimulation">Start Simulation</button>
 }
+else
+{
+    <button class="btn btn-danger" @onclick="StopSimulation">Stop Simulation</button>
+}
+
+<div class="my-3">
+    <label for="NetworkRequestDelay">
+        Network Delay (ms):
+        <input type="range" id="NetworkRequestDelay" min="0" max="2000" step="100" @bind="NetworkRequestDelay" />
+        <span>@NetworkRequestDelay ms</span>
+    </label>
+</div>
+
+<div class="my-3">
+    <label for="ElectionTimeoutMultiplier">
+        Election Timeout Multiplier:
+        <input type="range" id="ElectionTimeoutMultiplier" min="1" max="5" step="0.5"
+            @bind="ElectionTimeoutMultiplier" />
+        <span>@ElectionTimeoutMultiplier</span>
+    </label>
+</div>
+
+<div class="row">
+    @foreach (var url in Urls)
+    {
+        <div class="col-md-4 p-2">
+            <div class="border p-3">
+                <h5>Node: @url</h5>
+                @if (data.TryGetValue(url, out var nodeData))
+                {
+                    <p>Status: <span>@nodeData.State</span></p>
+                    <p>Current Term: <span>@nodeData.CurrentTerm</span></p>
+                    <p>Commit Index: <span>@nodeData.CommittedEntryIndex</span></p>
+
+                    <p>Leader:
+                        <span>
+                            @if (nodeData.State == 1)
+                                {
+                                @($"{nodeData.Id} (Candidate)")
+                                }
+                                else if (nodeData.State == 2)
+                                {
+                                @($"{nodeData.Id} (Leader)")
+                                }
+                                else
+                                {
+                                <text>@(nodeData.CurrentLeaderId?.ToString() ?? "Unknown")</text>
+                                }
+                            </span>
+                        </p>
+
+                        <!-- Progress Bar for Election Timeout -->
+                        <p>Timeout:</p>
+                        <div class="progress">
+                            <div class="progress-bar" style="width:@GetTimeoutPercentage(nodeData)%"></div>
+                        </div>
+
+                        <!-- Log Entries -->
+                        <h6>Log Entries</h6>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Index</th>
+                                    <th>Term</th>
+                                    <th>Command</th>
+                                    <th>Committed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < nodeData.Log.Count; i++)
+                                {
+                                    <tr>
+                                        <td>@i</td>
+                                        <td>@nodeData.CurrentTerm</td>
+                                        <td>@nodeData.Log[i]</td>
+                                        <td>@(i < nodeData.CommittedEntryIndex ? "✅" : "❌")</td>
+                                    </tr>
+                                }
+                        </tbody>
+                    </table>
+
+                    <!-- Send Command -->
+                    <h6>Send Command</h6>
+                    <input type="text" placeholder="Key" @bind="nodeCommandKey" class="form-control mb-1" />
+                    <input type="text" placeholder="Value" @bind="nodeCommandValue" class="form-control mb-1" />
+                    <button class="btn btn-success" @onclick="() => SendSetCommand(url)">Send Set Command</button>
+
+                    <p><strong>Response:</strong> @responseMessage</p>
+
+                    <div>
+                        <button class="btn btn-outline-danger" @onclick="@(() => StopNode(url))">Stop Node</button>
+                        <button class="btn btn-outline-primary" @onclick="@(() => StartNode(url))">Start Node</button>
+                    </div>
+                }
+                else
+                {
+                    <p>Loading data...</p>
+                }
+            </div>
+        </div>
+    }
+</div>
 
 @code {
     private readonly HttpClient http = new();
     private Timer? timer;
     private string[] Urls = Array.Empty<string>();
     private ConcurrentDictionary<string, NodeData> data = new();
+    private bool isRunning = false;
+    private int NetworkRequestDelay = 500;
+    private double ElectionTimeoutMultiplier = 1.5;
+    private string nodeCommandKey = "";
+    private string nodeCommandValue = "";
+    private string responseMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
         Urls = Environment.GetEnvironmentVariable("NODE_URLS")?.Split(",") ?? Array.Empty<string>();
 
-        // Periodically fetch data
         timer = new Timer(async (state) =>
         {
             foreach (var url in Urls)
@@ -68,6 +153,82 @@
         await Task.CompletedTask;
     }
 
+    private async Task StartSimulation()
+    {
+        try
+        {
+            if (Urls.Length == 0)
+            {
+                return;
+            }
+
+            string apiUrl = $"{Urls[0]}/startSimulation";
+
+            var response = await http.PostAsync(apiUrl, null);
+            if (response.IsSuccessStatusCode)
+            {
+                isRunning = true;
+            }
+            else
+            {
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting simulation: {ex.Message}");
+        }
+    }
+
+
+    private async Task StopSimulation()
+    {
+        try
+        {
+            var response = await http.PostAsync("/stopSimulation", null);
+            if (response.IsSuccessStatusCode)
+            {
+                isRunning = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error stopping simulation: {ex.Message}");
+        }
+    }
+
+    private async Task SendSetCommand(string nodeUrl)
+    {
+        var commandData = new ClientCommandData
+        {
+            Command = $"{nodeCommandKey}={nodeCommandValue}"
+        };
+
+        try
+        {
+            var response = await http.PostAsJsonAsync($"{nodeUrl}/request/command", commandData);
+            responseMessage = response.IsSuccessStatusCode ? "Command sent successfully!" : $"Error: {response.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            responseMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task StartNode(string nodeUrl)
+    {
+        await http.PostAsync($"{nodeUrl}/start", null);
+    }
+
+    private async Task StopNode(string nodeUrl)
+    {
+        await http.PostAsync($"{nodeUrl}/stop", null);
+    }
+
+    private int GetTimeoutPercentage(NodeData node)
+    {
+        return (int)((node.ElectionTimeout / 300.0) * 100);
+    }
+
     private class NodeData
     {
         public Guid Id { get; set; }
@@ -77,5 +238,10 @@
         public Guid? CurrentLeaderId { get; set; }
         public int CommittedEntryIndex { get; set; }
         public List<string> Log { get; set; } = new();
+    }
+
+    private class ClientCommandData
+    {
+        public string Command { get; set; } = "";
     }
 }

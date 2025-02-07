@@ -81,10 +81,57 @@ app.MapPost("/response/vote", async (RequestForVoteRPCDTO response) =>
   node.HandleRequestForVote(response);
 });
 
-app.MapPost("/request/command", async (ClientCommandData data) =>
+// app.MapPost("/request/command", async (ClientCommandData data) =>
+// {
+//   node.SendCommand(data);
+// });
+
+app.MapPost("/request/command", async (HttpContext context) =>
 {
-  node.SendCommand(data);
+    try
+    {
+        var commandData = await context.Request.ReadFromJsonAsync<ClientCommandData>();
+        if (commandData == null)
+        {
+            throw new ArgumentNullException(nameof(commandData), "Command data cannot be null.");
+        }
+
+        var safeCommandData = commandData with
+        {
+            RespondToClient = commandData.RespondToClient ?? ((success, id) => Console.WriteLine($"Command executed: {success}, Leader: {id}"))
+        };
+
+        node.SendCommand(safeCommandData);
+        context.Response.StatusCode = StatusCodes.Status200OK;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error processing command: {ex.Message}");
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    }
 });
+
+app.MapPost("/startSimulation", async (HttpContext context) =>
+{
+    try
+    {
+        Console.WriteLine("Starting Raft Simulation...");
+
+        node.RunElectionLoop(); 
+
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.WriteAsync("Simulation started.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error starting simulation: {ex.Message}");
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    }
+});
+
+
+
+
 
 
 app.Run();

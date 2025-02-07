@@ -1,31 +1,56 @@
 ﻿@page "/"
 @rendermode InteractiveServer
-@using System.Collections.Concurrent; 
+@using System.Collections.Concurrent;
+@using System.Net.Http.Json
 
 <PageTitle>Home</PageTitle>
 
 <h1>Raft Simulation through Docker Client!</h1>
 
-
-
 @foreach (var url in Urls)
 {
-    <p>@url</p>
+    <h3>Node URL: @url</h3>
+    @if (data.TryGetValue(url, out var nodeData))
+    {
+        <ul>
+            <li><strong>ID:</strong> @nodeData.Id</li>
+            <li><strong>State:</strong> @nodeData.State</li>
+            <li><strong>Election Timeout:</strong> @nodeData.ElectionTimeout</li>
+            <li><strong>Current Term:</strong> @nodeData.CurrentTerm</li>
+            <li><strong>Current Leader ID:</strong> @nodeData.CurrentLeaderId</li>
+            <li><strong>Committed Entry Index:</strong> @nodeData.CommittedEntryIndex</li>
+            <li><strong>Log Entries:</strong></li>
+            <ul>
+                @foreach (var logEntry in nodeData.Log)
+                {
+                    <li>@logEntry</li>
+                }
+            </ul>
+        </ul>
+    }
+    else
+    {
+        <p>Loading data from @url...</p>
+    }
 }
+
 @code {
-    HttpClient http = new HttpClient();
-    Timer timer;
-    string[] Urls = Environment.GetEnvironmentVariable("NODE_URLS").Split(",");
-    ConcurrentDictionary<string, NodeData> data = new();
+    private readonly HttpClient http = new();
+    private Timer? timer;
+    private string[] Urls = Array.Empty<string>();
+    private ConcurrentDictionary<string, NodeData> data = new();
+
     protected override async Task OnInitializedAsync()
     {
+        Urls = Environment.GetEnvironmentVariable("NODE_URLS")?.Split(",") ?? Array.Empty<string>();
+
+        // Periodically fetch data
         timer = new Timer(async (state) =>
         {
             foreach (var url in Urls)
             {
                 try
                 {
-                    string fullurl = $"{url}/nodeData";
                     var nodeData = await http.GetFromJsonAsync<NodeData>($"{url}/nodeData");
                     if (nodeData != null)
                     {
@@ -37,8 +62,20 @@
                     Console.WriteLine($"Error fetching data from {url}: {ex.Message}");
                 }
             }
-            InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         }, null, 0, 5000);
+
+        await Task.CompletedTask;
+    }
+
+    private class NodeData
+    {
+        public Guid Id { get; set; }
+        public int State { get; set; }
+        public int ElectionTimeout { get; set; }
+        public int CurrentTerm { get; set; }
+        public Guid? CurrentLeaderId { get; set; }
+        public int CommittedEntryIndex { get; set; }
+        public List<string> Log { get; set; } = new();
     }
 }
-

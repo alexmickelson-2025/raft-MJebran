@@ -42,6 +42,7 @@ var node = new RaftNode{Id = IntToGuid(int.Parse(nodeId)), OtherNodes = new List
 
 node.RunElectionLoop();
 
+
 app.MapGet("/health", () => "healthy");
 
 app.MapGet("/nodeData", () =>
@@ -68,6 +69,7 @@ app.MapPost("/request/appendEntries", async (AppendEntriesRPCDTO request) =>
 
 app.MapPost("/request/vote", async (RequestForVoteRPCDTO request) =>
 {
+  Console.WriteLine($"Received vote request form node {request.CandidateId}");
   node.HandleRequestForVote(request);
 });
 
@@ -111,23 +113,23 @@ app.MapPost("/request/command", async (HttpContext context) =>
     }
 });
 
-app.MapPost("/startSimulation", async (HttpContext context) =>
-{
-    try
-    {
-        Console.WriteLine("Starting Raft Simulation...");
+// app.MapPost("/startSimulation", async (HttpContext context) =>
+// {
+//     try
+//     {
+//         Console.WriteLine("Starting Raft Simulation...");
 
-        node.RunElectionLoop(); 
+//         node.RunElectionLoop(); 
 
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        await context.Response.WriteAsync("Simulation started.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error starting simulation: {ex.Message}");
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-    }
-});
+//         context.Response.StatusCode = StatusCodes.Status200OK;
+//         await context.Response.WriteAsync("Simulation started.");
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"Error starting simulation: {ex.Message}");
+//         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+//     }
+// });
 
 app.MapGet("/pause", () => {
   node.PauseElectionLoop();

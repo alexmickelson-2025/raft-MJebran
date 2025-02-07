@@ -7,15 +7,15 @@ public class HttpRpcOtherNode : IRaftNode
   public int Id { get; }
   public string Url { get; }
 
-    Guid IRaftNode.Id {get; set;}
+  Guid IRaftNode.Id { get; set; }
 
-    NodeState IRaftNode.State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    Guid? IRaftNode.CurrentLeaderId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    int IRaftNode.CurrentTerm { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    List<IRaftNode> IRaftNode.OtherNodes { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    Guid? IRaftNode.VotedFor { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  NodeState IRaftNode.State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  Guid? IRaftNode.CurrentLeaderId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  int IRaftNode.CurrentTerm { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  List<IRaftNode> IRaftNode.OtherNodes { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+  Guid? IRaftNode.VotedFor { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-    private HttpClient client = new();
+  private HttpClient client = new();
 
   public HttpRpcOtherNode(int id, string url)
   {
@@ -76,68 +76,91 @@ public class HttpRpcOtherNode : IRaftNode
     await client.PostAsJsonAsync(Url + "/request/command", data);
   }
 
-    void IRaftNode.BecomeCandidate()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.BecomeCandidate()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.BecomeLeader()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.BecomeLeader()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.HandleAppendEntries(AppendEntriesRPCDTO appendEntries)
+  void IRaftNode.HandleAppendEntries(AppendEntriesRPCDTO appendEntries)
+  {
+    try
     {
-        throw new NotImplementedException();
+      client.PostAsJsonAsync(Url + "/request/appendEntries", appendEntries);
     }
+    catch (HttpRequestException)
+    {
+      Console.WriteLine($"node {Url} is down");
+    }
+  }
 
-    AppendEntriesResponse IRaftNode.ProcessAppendEntries(AppendEntriesRPCDTO rpc)
+  AppendEntriesResponse IRaftNode.ProcessAppendEntries(AppendEntriesRPCDTO rpc)
+  {
+    try
     {
-        throw new NotImplementedException();
+      client.PostAsJsonAsync(Url + "/response/appendEntries", rpc);
     }
+    catch (HttpRequestException)
+    {
+      Console.WriteLine($"node {Url} is down");
+    }
+    return new AppendEntriesResponse();
+  }
 
-    RequestForVoteResponse IRaftNode.HandleRequestForVote(RequestForVoteRPCDTO rpc)
+  RequestForVoteResponse IRaftNode.HandleRequestForVote(RequestForVoteRPCDTO rpc)
+  {
+    try
     {
-        throw new NotImplementedException();
+      client.PostAsJsonAsync(Url + "/request/vote", rpc);
     }
+    catch (HttpRequestException)
+    {
+      Console.WriteLine($"node {Url} is down");
+    }
+    return new RequestForVoteResponse();
+  }
 
-    void IRaftNode.ResetElectionTimer()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.ResetElectionTimer()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.StartElection()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.StartElection()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.StartHeartbeatTimer(int intervalMs)
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.StartHeartbeatTimer(int intervalMs)
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.StopHeartbeatTimer()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.StopHeartbeatTimer()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.StartElectionTimer(int timeoutMs)
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.StartElectionTimer(int timeoutMs)
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.CheckElectionTimeout()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.CheckElectionTimeout()
+  {
+    throw new NotImplementedException();
+  }
 
-    void IRaftNode.ReceiveVote()
-    {
-        throw new NotImplementedException();
-    }
+  void IRaftNode.ReceiveVote()
+  {
+    throw new NotImplementedException();
+  }
 
-    bool IRaftNode.HasMajorityVotes(int totalNodes)
-    {
-        throw new NotImplementedException();
-    }
+  bool IRaftNode.HasMajorityVotes(int totalNodes)
+  {
+    throw new NotImplementedException();
+  }
 }

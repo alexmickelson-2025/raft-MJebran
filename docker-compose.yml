@@ -47,13 +47,11 @@ services:
   client:
     build:
       context: .
-      dockerfile: dev.Dockerfile
-    working_dir: /app
-    user: "1000:100"
+      dockerfile: dev-slow.Dockerfile
+   
+    
     ports:
       - "5000:8080"
-    volumes:
-      - ./:/app
     environment:
       - NODE_ID=3
       - NODE_URLS=http://node1:8080,http://node2:8080,http://node3:8080

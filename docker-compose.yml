@@ -6,6 +6,7 @@ services:
     environment:
       - NODE_ID=1
       - OTHER_NODES=2,http://node2:8080;3,http://node3:8080
+      - BE_LEADER=true
       - NODE_INTERVAL_SCALAR=50
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -21,6 +22,7 @@ services:
     environment:
       - NODE_ID=2
       - OTHER_NODES=1,http://node1:8080;3,http://node3:8080
+      - BE_LEADER=false
       - NODE_INTERVAL_SCALAR=50
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -36,6 +38,7 @@ services:
     environment:
       - NODE_ID=3
       - OTHER_NODES=1,http://node1:8080;2,http://node2:8080
+      - BE_LEADER=false
       - NODE_INTERVAL_SCALAR=50
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

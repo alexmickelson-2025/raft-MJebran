@@ -9,6 +9,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 
 var nodeId = Environment.GetEnvironmentVariable("NODE_ID") ?? throw new Exception("NODE_ID environment variable not set");
+var ShouldIBeALeader = Environment.GetEnvironmentVariable("BE_LEADER") ?? throw new Exception("BE_LEADER environment variable not set");
 var otherNodesRaw = Environment.GetEnvironmentVariable("OTHER_NODES") ?? throw new Exception("OTHER_NODES environment variable not set");
 var nodeIntervalScalarRaw = Environment.GetEnvironmentVariable("NODE_INTERVAL_SCALAR") ?? throw new Exception("NODE_INTERVAL_SCALAR environment variable not set");
 
@@ -36,11 +37,18 @@ IRaftNode[] otherNodes = otherNodesRaw
   .ToArray();
 
 
-var node = new RaftNode{Id = IntToGuid(int.Parse(nodeId)), OtherNodes = new List<IRaftNode>(otherNodes)};
+var node = new RaftNode { Id = IntToGuid(int.Parse(nodeId)), OtherNodes = new List<IRaftNode>(otherNodes) };
 
 // RaftNode.NodeIntervalScalar = double.Parse(nodeIntervalScalarRaw);
 
-node.RunElectionLoop();
+if (ShouldIBeALeader == "true")
+{
+  node.BecomeLeader();
+}
+else
+{
+ 
+}
 
 
 app.MapGet("/health", () => "healthy");
@@ -55,10 +63,10 @@ app.MapGet("/nodeData", () =>
     CurrentTerm = node.CurrentTerm,
     CurrentLeaderId = node.CurrentLeaderId,
     CommittedEntryIndex = node.CommitIndex,
-    Log =node.Log,
+    Log = node.Log,
     // NodeIntervalScalar: RaftNode.NodeIntervalScalar
   }
-    
+
   ;
 });
 
@@ -80,7 +88,9 @@ app.MapPost("/response/appendEntries", async (AppendEntriesRPCDTO response) =>
 
 app.MapPost("/response/vote", async (RequestForVoteRPCDTO response) =>
 {
-  node.HandleRequestForVote(response);
+  // node.HandleRequestForVote(response);
+  Console.WriteLine($"Received vote response from node {response.CandidateId}");
+  node.ReceiveVote();
 });
 
 // app.MapPost("/request/command", async (ClientCommandData data) =>
@@ -90,27 +100,27 @@ app.MapPost("/response/vote", async (RequestForVoteRPCDTO response) =>
 
 app.MapPost("/request/command", async (HttpContext context) =>
 {
-    try
+  try
+  {
+    var commandData = await context.Request.ReadFromJsonAsync<ClientCommandData>();
+    if (commandData == null)
     {
-        var commandData = await context.Request.ReadFromJsonAsync<ClientCommandData>();
-        if (commandData == null)
-        {
-            throw new ArgumentNullException(nameof(commandData), "Command data cannot be null.");
-        }
-
-        var safeCommandData = commandData with
-        {
-            RespondToClient = commandData.RespondToClient ?? ((success, id) => Console.WriteLine($"Command executed: {success}, Leader: {id}"))
-        };
-
-        node.SendCommand(safeCommandData);
-        context.Response.StatusCode = StatusCodes.Status200OK;
+      throw new ArgumentNullException(nameof(commandData), "Command data cannot be null.");
     }
-    catch (Exception ex)
+
+    var safeCommandData = commandData with
     {
-        Console.WriteLine($"Error processing command: {ex.Message}");
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-    }
+      RespondToClient = commandData.RespondToClient ?? ((success, id) => Console.WriteLine($"Command executed: {success}, Leader: {id}"))
+    };
+
+    node.SendCommand(safeCommandData);
+    context.Response.StatusCode = StatusCodes.Status200OK;
+  }
+  catch (Exception ex)
+  {
+    Console.WriteLine($"Error processing command: {ex.Message}");
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+  }
 });
 
 // app.MapPost("/startSimulation", async (HttpContext context) =>
@@ -131,11 +141,13 @@ app.MapPost("/request/command", async (HttpContext context) =>
 //     }
 // });
 
-app.MapGet("/pause", () => {
+app.MapGet("/pause", () =>
+{
   node.PauseElectionLoop();
 });
 
-app.MapGet("/unpause", () => {
+app.MapGet("/unpause", () =>
+{
   node.UnpauseElectionLoop();
 });
 
@@ -146,7 +158,7 @@ app.Run();
 
 static Guid IntToGuid(int value)
 {
-    byte[] bytes = new byte[16];
-    BitConverter.GetBytes(value).CopyTo(bytes, 0);
-    return new Guid(bytes);
+  byte[] bytes = new byte[16];
+  BitConverter.GetBytes(value).CopyTo(bytes, 0);
+  return new Guid(bytes);
 }

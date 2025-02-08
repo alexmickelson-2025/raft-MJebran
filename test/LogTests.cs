@@ -499,7 +499,4 @@ public class LogTests
     // Assert
     Assert.False(response.Success, "Follower should reject AppendEntries if term/index do not match existing log.");
   }
-
-
-
 }

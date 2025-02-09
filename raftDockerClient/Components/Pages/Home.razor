@@ -5,16 +5,7 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Raft Web Client - Node Simulation</h1>
-
-@* @if (!isRunning)
-{
-    <button class="btn btn-primary" @onclick="StartSimulation">Start Simulation</button>
-}
-else
-{
-    <button class="btn btn-danger" @onclick="StopSimulation">Stop Simulation</button> *@
-}
+<h1>Raft Web Docker Client</h1>
 
 <div class="my-3">
     <label for="NetworkRequestDelay">
@@ -24,94 +15,87 @@ else
     </label>
 </div>
 
-<div class="my-3">
-    <label for="ElectionTimeoutMultiplier">
-        Election Timeout Multiplier:
-        <input type="range" id="ElectionTimeoutMultiplier" min="1" max="5" step="0.5"
-            @bind="ElectionTimeoutMultiplier" />
-        <span>@ElectionTimeoutMultiplier</span>
-    </label>
-</div>
-
 <div class="row">
     @foreach (var url in Urls)
-    {
-        <div class="col-md-4 p-2">
-            <div class="border p-3">
-                <h5>Node: @url</h5>
-                @if (data.TryGetValue(url, out var nodeData))
-                {
-                    <p>Status: <span>@nodeData.State</span></p>
-                    <p>Current Term: <span>@nodeData.CurrentTerm</span></p>
-                    <p>Commit Index: <span>@nodeData.CommittedEntryIndex</span></p>
+{
+    <div class="col-md-4 p-2">
+        <div class="border p-3">
+            <h5>Node: @url</h5>
+            @if (data.TryGetValue(url, out var nodeData))
+            {
+                <p>Status: 
+                    <span>
+                        @if (nodeData.State == 1) 
+                        { 
+                            @($"{nodeData.Id} (Candidate)") 
+                        }
+                        else if (nodeData.State == 2) 
+                        { 
+                            @($"{nodeData.Id} (Leader)") 
+                        }
+                        else 
+                        { 
+                            @($"{nodeData.Id} (Follower)") 
+                        }
+                    </span>
+                </p>
 
-                    <p>Leader:
-                        <span>
-                            @if (nodeData.State == 1)
-                                {
-                                @($"{nodeData.Id} (Candidate)")
-                                }
-                                else if (nodeData.State == 2)
-                                {
-                                @($"{nodeData.Id} (Leader)")
-                                }
-                                else
-                                {
-                                <text>@(nodeData.CurrentLeaderId?.ToString() ?? "Unknown")</text>
-                                }
-                            </span>
-                        </p>
+                <p>Current Term: <span>@nodeData.CurrentTerm</span></p>
+                <p>Commit Index: <span>@nodeData.CommittedEntryIndex</span></p>
 
-                        <!-- Progress Bar for Election Timeout -->
-                        <p>Timeout:</p>
-                        <div class="progress">
-                            <div class="progress-bar" style="width:@GetTimeoutPercentage(nodeData)%"></div>
-                        </div>
+                <!-- Dynamic Timeout -->
+                <p>Timeout:</p>
+                <div class="progress">
+                    <div class="progress-bar" style="width:@GetTimeoutPercentage(nodeData)%"></div>
+                </div>
 
-                        <!-- Log Entries -->
-                        <h6>Log Entries</h6>
-                        <table class="table table-sm">
-                            <thead>
+                <!-- Log Entries Persist -->
+                <h6>Log Entries</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Term</th>
+                            <th>Command</th>
+                            <th>Committed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (nodeData.Log.Any())
+                        {
+                            @for (int i = 0; i < nodeData.Log.Count; i++)
+                            {
                                 <tr>
-                                    <th>Index</th>
-                                    <th>Term</th>
-                                    <th>Command</th>
-                                    <th>Committed</th>
+                                    <td>@i</td>
+                                    <td>@nodeData.Log[i].Term</td>
+                                    <td>@nodeData.Log[i].Command</td>
+                                    <td>@(i < nodeData.CommittedEntryIndex ? "✅" : "❌")</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @for (int i = 0; i < nodeData.Log.Count; i++)
-                                {
-                                    <tr>
-                                        <td>@i</td>
-                                        <td>@nodeData.CurrentTerm</td>
-                                        <td>@nodeData.Log[i]</td>
-                                        <td>@(i < nodeData.CommittedEntryIndex ? "✅" : "❌")</td>
-                                    </tr>
-                                }
-                        </tbody>
-                    </table>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="4">No log entries yet</td></tr>
+                        }
+                    </tbody>
+                </table>
 
-                    <!-- Send Command -->
-                    <h6>Send Command</h6>
-                    <input type="text" placeholder="Key" @bind="nodeCommandKey" class="form-control mb-1" />
-                    <input type="text" placeholder="Value" @bind="nodeCommandValue" class="form-control mb-1" />
-                    <button class="btn btn-success" @onclick="() => SendSetCommand(url)">Send Set Command</button>
+                <!-- Send Command -->
+                <h6>Send Command</h6>
+                <input type="text" placeholder="Key" @bind="nodeCommandKey" class="form-control mb-1" />
+                <input type="text" placeholder="Value" @bind="nodeCommandValue" class="form-control mb-1" />
+                <button class="btn btn-success" @onclick="() => SendSetCommand(url)">Send Set Command</button>
 
-                    <p><strong>Response:</strong> @responseMessage</p>
-
-                    <div>
-                        <button class="btn btn-outline-danger" @onclick="@(() => StopNode(url))">Stop Node</button>
-                        <button class="btn btn-outline-primary" @onclick="@(() => StartNode(url))">Start Node</button>
-                    </div>
-                }
-                else
-                {
-                    <p>Loading data...</p>
-                }
-            </div>
+                <p><strong>Response:</strong> @responseMessage</p>
+            }
+            else
+            {
+                <p>Loading data...</p>
+            }
         </div>
-    }
+    </div>
+}
+
 </div>
 
 @code {
@@ -119,9 +103,7 @@ else
     private Timer? timer;
     private string[] Urls = Array.Empty<string>();
     private ConcurrentDictionary<string, NodeData> data = new();
-    private bool isRunning = false;
     private int NetworkRequestDelay = 500;
-    private double ElectionTimeoutMultiplier = 1.5;
     private string nodeCommandKey = "";
     private string nodeCommandValue = "";
     private string responseMessage = "";
@@ -149,51 +131,6 @@ else
             }
             await InvokeAsync(StateHasChanged);
         }, null, 0, 5000);
-
-        await Task.CompletedTask;
-    }
-
-    private async Task StartSimulation()
-    {
-        try
-        {
-            if (Urls.Length == 0)
-            {
-                return;
-            }
-
-            string apiUrl = $"{Urls[0]}/startSimulation";
-
-            var response = await http.PostAsync(apiUrl, null);
-            if (response.IsSuccessStatusCode)
-            {
-                isRunning = true;
-            }
-            else
-            {
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error starting simulation: {ex.Message}");
-        }
-    }
-
-
-    private async Task StopSimulation()
-    {
-        try
-        {
-            var response = await http.PostAsync("/stopSimulation", null);
-            if (response.IsSuccessStatusCode)
-            {
-                isRunning = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error stopping simulation: {ex.Message}");
-        }
     }
 
     private async Task SendSetCommand(string nodeUrl)
@@ -214,16 +151,6 @@ else
         }
     }
 
-    private async Task StartNode(string nodeUrl)
-    {
-        await http.GetAsync($"{nodeUrl}/unpause");
-    }
-
-    private async Task StopNode(string nodeUrl)
-    {
-        await http.GetAsync($"{nodeUrl}/pause");
-    }
-
     private int GetTimeoutPercentage(NodeData node)
     {
         return (int)((node.ElectionTimeout / 300.0) * 100);
@@ -237,7 +164,13 @@ else
         public int CurrentTerm { get; set; }
         public Guid? CurrentLeaderId { get; set; }
         public int CommittedEntryIndex { get; set; }
-        public List<string> Log { get; set; } = new();
+        public List<LogEntry> Log { get; set; } = new();
+    }
+
+    private class LogEntry
+    {
+        public int Term { get; set; }
+        public string Command { get; set; } = "";
     }
 
     private class ClientCommandData

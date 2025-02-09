@@ -51,6 +51,12 @@ public class RaftNode : IRaftNode
         VotedFor = Id;
     }
 
+    public void BecomeFollower()
+    {
+        State = NodeState.Follower;
+        VotedFor = null;
+    }
+
     public int GetVoteCount() => VotedFor == Id ? 1 : 0;
 
     public bool HasVotedFor(Guid candidateId) => VotedFor == candidateId;

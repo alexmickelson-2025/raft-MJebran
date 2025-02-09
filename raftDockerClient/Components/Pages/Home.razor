@@ -27,7 +27,7 @@
                     <span>
                         @if (nodeData.State == 1) 
                         { 
-                            @($"{nodeData.Id} (Candidate)") 
+                            @($"{nodeData.Id} (Follower)") 
                         }
                         else if (nodeData.State == 2) 
                         { 
@@ -35,7 +35,7 @@
                         }
                         else 
                         { 
-                            @($"{nodeData.Id} (Follower)") 
+                            @($"{nodeData.Id} (Candidate)") 
                         }
                     </span>
                 </p>
